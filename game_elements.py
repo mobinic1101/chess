@@ -54,7 +54,7 @@ class Board(AbstractDrawable):
         return board
         
 
-    def get_cell_with_coordinates(self, coordinates: tuple) -> Cell | None:
+    def get_cell_by_coordinates(self, coordinates: tuple) -> Cell | None:
         pass
 
     def __getitem__(self, i: SupportsIndex):
