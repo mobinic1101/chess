@@ -1,0 +1,60 @@
+This is Chess Game (Better Called "Chess Engine"!)
+
+the moves in each game should get saved.
+there should be a computer player able to play using an algorithm.
+
+
+class Drawable(ABC):
+    @abstract_method
+    def get_texture() -> pygame.Image
+        ...
+
+    @abstract_method
+    def get_rect() -> Rect # with coordinates and width-hight
+        ...
+
+    def move(x, y):
+        ... # adds to the x and y values of
+
+
+
+class Cell: # cells are invisible but they have hitboxes with the size of a cell in the board texture
+    -id: int
+    -piece: Piece | None
+
+    @property
+    get_rect:
+        return cell_rect
+    
+
+class Board(Drawable):
+    -board list[list[Cell]] (2d array)
+
+    def find_piece(<piece coordinates>):
+        finds a piece in self.board using some sort of algorithm
+
+class Piece(ABC, Drawable):
+    -image
+
+
+class Renderer:
+    -render_q = Queue()
+
+    def add_render_item(item: Drawable):
+        ...
+
+    def draw_q():
+        iterate through self.render_q and dreaw them
+
+    def update():
+        pygame.screen.update()
+
+    def draw_and_update():
+        self.draw_q()
+        self.update()
+
+
+class Mover()
+
+
+    
