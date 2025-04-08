@@ -4,10 +4,10 @@ import pygame.sprite
 
 
 class AbstractDrawable(pygame.sprite.Sprite, ABC):
-    def __init__(self, image: pygame.Surface):
+    def __init__(self, sprite: pygame.Surface):
         super().__init__()
-        self.image = image
-        self.rect = self.image.get_rect()
+        self.image = sprite
+        self.rect = self.sprite.get_rect()
 
     def move_x(self, value):
         self.rect.x += value
@@ -17,8 +17,8 @@ class AbstractDrawable(pygame.sprite.Sprite, ABC):
 
 
 class AbstractPiece(AbstractDrawable):
-    def __init__(self, _id, image):
-        super().__init__(image)
+    def __init__(self, _id, sprite):
+        super().__init__(sprite)
         self.id = _id
 
     @abstractmethod

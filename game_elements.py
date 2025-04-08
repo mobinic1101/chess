@@ -5,8 +5,8 @@ from abstracts import AbstractDrawable, AbstractPiece
 
 
 class Cell(AbstractDrawable):
-    def __init__(self, _id, image: pygame.Surface, piece: AbstractPiece | None = None):
-        super().__init__(image)
+    def __init__(self, _id, sprite: pygame.Surface, piece: AbstractPiece | None = None):
+        super().__init__(sprite)
         self.piece = piece
         self.id = _id
 
@@ -23,18 +23,18 @@ class Cell(AbstractDrawable):
 class Board(AbstractDrawable):
     CELL_COUNT = 8 # each chess board has 8 cells vertically and horizantally
     
-    def __init__(self, image):
-        super().__init__(image)
+    def __init__(self, sprite):
+        super().__init__(sprite)
         logging.info("initializing board...")
         self.board = self._init_board()
 
     def _init_board(self) -> list[list[Cell]]:
         """creates and initializes Cell objects, sets their width, hight, x and y
-        based on self.image, and fill self.board with them.
+        based on self.sprite, and fill self.board with them.
         """
         # divide board width and hight to 8 equal cells,
         # set the cell width and hight based on the result of division.
-        cell_width = cell_hight = self.image.get_width() // self.CELL_COUNT
+        cell_width = cell_hight = self.sprite.get_width() // self.CELL_COUNT
         board = []
         cell_id = 1
         for i in range(self.CELL_COUNT):
@@ -102,12 +102,12 @@ if __name__ == "__main__":
 
     texture_loader = TexturePackLoader(settings.TEXTURE_DIR)
     pack = texture_loader.get_pack()
-    image = pack.get_texture(settings.TEXTURE_NAMES["board"])
+    sprite = pack.get_texture(settings.TEXTURE_NAMES["board"])
     piece = pack.get_texture(settings.TEXTURE_NAMES["b_pawn"])
-    image = pygame.transform.scale(image, (settings.HIGHT, settings.HIGHT))
-    board = Board(image)
-    board.rect.x = (settings.WIDTH // 2) - (board.image.get_width() // 2)
-    board.rect.y = (settings.HIGHT // 2) - (board.image.get_height() // 2)
+    sprite = pygame.transform.scale(sprite, (settings.HIGHT, settings.HIGHT))
+    board = Board(sprite)
+    board.rect.x = (settings.WIDTH // 2) - (board.sprite.get_width() // 2)
+    board.rect.y = (settings.HIGHT // 2) - (board.sprite.get_height() // 2)
     screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
 
     run = True
@@ -118,8 +118,8 @@ if __name__ == "__main__":
 
         for row in board.board:
             for cell in row:
-                cell.image.fill('red')
-                # board.image.blit(cell.image, cell.rect)
-        board.image.blit(piece, piece.get_rect())
-        screen.blit(board.image, board.rect)
+                cell.sprite.fill('red')
+                # board.sprite.blit(cell.sprite, cell.rect)
+        board.sprite.blit(piece, piece.get_rect())
+        screen.blit(board.sprite, board.rect)
         pygame.display.update()
