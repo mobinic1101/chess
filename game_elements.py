@@ -25,18 +25,18 @@ class Cell(AbstractDrawable):
 class Board(AbstractDrawable):
     CELL_COUNT = 8 # each chess board has 8 cells vertically and horizantally
     
-    def __init__(self, image):
-        super().__init__(image)
+    def __init__(self, sprite):
+        super().__init__(sprite)
         logging.info("initializing board...")
         self.board = self._init_board()
 
     def _init_board(self) -> list[list[Cell]]:
         """creates and initializes Cell objects, sets their width, hight, x and y
-        based on self.image, and fill self.board with them.
+        based on self.sprite, and fill self.board with them.
         """
         # divide board width and hight to 8 equal cells,
         # set the cell width and hight based on the result of division.
-        cell_width = cell_hight = self.image.get_width() // self.CELL_COUNT
+        cell_width = cell_hight = self.sprite.get_width() // self.CELL_COUNT
         board = []
         cell_id = 1
         for i in range(self.CELL_COUNT):
