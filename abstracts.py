@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import random
 import pygame
 import pygame.sprite
 
@@ -6,6 +7,7 @@ import pygame.sprite
 class AbstractDrawable(pygame.sprite.Sprite, ABC):
     def __init__(self, image: pygame.Surface):
         super().__init__()
+        self.id = random.random()
         self.image = image
         self.rect = self.image.get_rect()
 
@@ -15,11 +17,13 @@ class AbstractDrawable(pygame.sprite.Sprite, ABC):
     def move_y(self, value):
         self.rect.y += value
 
+    def __eq__(self, other):
+        return self.id == other.id
+
 
 class AbstractPiece(AbstractDrawable):
-    def __init__(self, _id, image):
+    def __init__(self, image):
         super().__init__(image)
-        self.id = _id
 
     @abstractmethod
     def find_available_spots(self, board):
@@ -30,3 +34,6 @@ class AbstractPiece(AbstractDrawable):
             board (Board): instance of Board class
         """
         pass
+    
+    def __str__(self):
+        return f"Piece(id={self.id})"

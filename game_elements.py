@@ -5,10 +5,9 @@ from abstracts import AbstractDrawable, AbstractPiece
 
 
 class Cell(AbstractDrawable):
-    def __init__(self, _id, image: pygame.Surface, piece: AbstractPiece | None = None):
+    def __init__(self, image: pygame.Surface, piece: AbstractPiece | None = None):
         super().__init__(image)
         self.piece = piece
-        self.id = _id
 
     def is_empty(self):
         return self.piece is None
@@ -18,6 +17,9 @@ class Cell(AbstractDrawable):
     
     def rem_piece(self):
         self.piece = None
+    
+    def __str__(self):
+        return f"Cell(id={self.id}, piece={self.piece})"
 
 
 class Board(AbstractDrawable):
@@ -96,30 +98,34 @@ class King(AbstractPiece):
 
 # testing
 if __name__ == "__main__":
-    import pygame
-    import settings
-    from texture_loader import TexturePackLoader
+    # import pygame
+    # import settings
+    # from texture_loader import TexturePackLoader
 
-    texture_loader = TexturePackLoader(settings.TEXTURE_DIR)
-    pack = texture_loader.get_pack()
-    image = pack.get_texture(settings.TEXTURE_NAMES["board"])
-    piece = pack.get_texture(settings.TEXTURE_NAMES["b_pawn"])
-    image = pygame.transform.scale(image, (settings.HIGHT, settings.HIGHT))
-    board = Board(image)
-    board.rect.x = (settings.WIDTH // 2) - (board.image.get_width() // 2)
-    board.rect.y = (settings.HIGHT // 2) - (board.image.get_height() // 2)
-    screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
+    # texture_loader = TexturePackLoader(settings.TEXTURE_DIR)
+    # pack = texture_loader.get_pack()
+    # image = pack.get_texture(settings.TEXTURE_NAMES["board"])
+    # piece = pack.get_texture(settings.TEXTURE_NAMES["b_pawn"])
+    # image = pygame.transform.scale(image, (settings.HIGHT, settings.HIGHT))
+    # board = Board(image)
+    # board.rect.x = (settings.WIDTH // 2) - (board.image.get_width() // 2)
+    # board.rect.y = (settings.HIGHT // 2) - (board.image.get_height() // 2)
+    # screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
 
-    run = True
-    while run:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
+    # run = True
+    # while run:
+    #     for event in pygame.event.get():
+    #         if event.type == pygame.QUIT:
+    #             run = False
 
-        for row in board.board:
-            for cell in row:
-                cell.image.fill('red')
-                # board.image.blit(cell.image, cell.rect)
-        board.image.blit(piece, piece.get_rect())
-        screen.blit(board.image, board.rect)
-        pygame.display.update()
+    #     for row in board.board:
+    #         for cell in row:
+    #             cell.image.fill('red')
+    #             # board.image.blit(cell.image, cell.rect)
+    #     board.image.blit(piece, piece.get_rect())
+    #     screen.blit(board.image, board.rect)
+    #     pygame.display.update()
+
+    c1 = Cell(1, pygame.Surface((50, 50)))
+    c2 = Cell(1, pygame.Surface((50, 50)))
+    print(c1 == c2)
