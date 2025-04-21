@@ -54,7 +54,32 @@ class Renderer:
         self.update()
 
 
-class Mover()
-
 
     
+    
+
+    
+player classes:
+NormalPlayer:
+    get_input() -> return tuple[int, int] -> (mosue pos)
+
+OnlinePlayer:
+    get_input() -> iterates through messages-list and return if the message is a input message
+
+
+MESSAGES_LIST: a list of messages grabbed by client.listen
+
+socket client (runs on a seperate therad)
+connect to the server
+if user clicked on online play:
+    tells the server to throw me in ready to play players list
+    the server then finds a suited player based on you rank the throw both of you in a group so 
+    you two can communicate together and play!
+listens for messages:
+    if a message recieved it throws that message in messages-list
+sends message:
+    sends message to server to its playing user
+
+
+server:
+Fastapi websocket server!

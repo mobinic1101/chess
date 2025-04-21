@@ -1,18 +1,10 @@
 from pydantic import BaseModel
 import abstracts
-
-
-class Coordinate(BaseModel):
-    x: int
-    y: int
-
-    def __str__(self):
-        return f"({self.x}, {self.y})"
     
 
 class Operation(BaseModel):
     object: abstracts.AbstractDrawable
-    coordinate: Coordinate
+    coordinate: tuple
 
     def __str__(self):
         return f"({self.object}, {self.coordinate})"

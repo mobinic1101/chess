@@ -30,7 +30,7 @@ class TexturePack:
             )
         
         logging.info("loading all textures...")
-        self.all_textures = self.load_all()
+        self.all_textures: dict[str, pygame.Surface] = self.load_all()
 
     def find_messing_textures(self):
         textures_names = [texture_name for texture_name in self.all_textures_paths]

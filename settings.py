@@ -4,8 +4,10 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
+FPS = 60
 BASE_DIR = Path(os.getcwd())
 WIDTH, HIGHT = (1024, 600)
+CAPTION = "MasterChess"
 TEXTURE_DIR = BASE_DIR / "textures/"
 DEFAULT_TEXTURE_PACK = "pack1"
 

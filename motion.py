@@ -10,13 +10,13 @@ class Mtion:
         self.speed = speed
 
     def add_operation(
-        self, drawable: abstracts.AbstractDrawable, destination: datatypes.Coordinate
+        self, drawable: abstracts.AbstractDrawable, destination: tuple[int, int]
     ):
         """add a motion operation to the list of operations.
 
         Args:
             drawable (abstracts.AbstractDrawable): The object to be moved.
-            destination (datatypes.Coordinate): The destination coordinates to move to.
+            destination (tuple[int, int]): The destination coordinates to move to.
         """
         i = self.find_operation(drawable)
         if i is not None:
