@@ -174,6 +174,7 @@ class Rook(AbstractPiece):
             available_spots.append((piece_i, j))
         for j in range(piece_j + 1, self.CELL_COUNT):
             available_spots.append((piece_i, j))
+
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
@@ -224,7 +225,7 @@ class Bishop(AbstractPiece):
             
         piece_i = coordinate[0]
         piece_j = coordinate[1]
-        for i in range(board.CELL_COUNT):
+        for i in range(1, board.CELL_COUNT):
 
             # optimize the loop
             if (piece_i - i < 0 or piece_i - i >= self.CELL_COUNT) or (
@@ -250,7 +251,7 @@ class Queen(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
 
-        for i in range(board.CELL_COUNT): # DIAGONAL
+        for i in range(1, board.CELL_COUNT): # DIAGONAL
 
             # optimize the loop
             if (piece_i - i < 0 or piece_i - i >= self.CELL_COUNT) or (
@@ -286,8 +287,8 @@ class King(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
 
-        for i in [-1, 0, 1]:
-            for j in [-1, 0, 1]:
+        for i in [-1, 1]:
+            for j in [-1, 1]:
                 # prevent IndexOutOfRange
                 if (piece_i + i < 0 or piece_i + i >= self.CELL_COUNT) or (
                     piece_j + j < 0 or piece_j + j >= self.CELL_COUNT):
