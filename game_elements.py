@@ -1,6 +1,6 @@
-import pygame
 from typing import SupportsIndex
 import logging
+import pygame
 from abstracts import AbstractDrawable, AbstractPiece
 import settings
 
@@ -104,12 +104,12 @@ class Board(AbstractDrawable):
                 ):
                     return i, j
         return None
-    
+
     def get_filled_cells(self) -> list[Cell]:
         """get cells that have a piece attached to them
         Returns:
             list[Cell]
-        """        
+        """
         cells = []
         for row in self.board:
             for cell in row:
@@ -133,10 +133,12 @@ class Pawn(AbstractPiece):
             board (Board, optional):
             coordinate (tuple[int, int], optional):
             **kwargs: a color should be passed here to determine if the piece is white or black
-        """        
+        """
         if not kwargs.get("color"):
-            raise ValueError("color should be passed to determine if the piece is white or black")
-        
+            raise ValueError(
+                "color should be passed to determine if the piece is white or black"
+            )
+
         coordinate = self.coordinate if not coordinate else coordinate
 
         # try using the cache
@@ -154,11 +156,11 @@ class Pawn(AbstractPiece):
             else:
                 available_spots.append((piece_i, piece_j - 1))
 
-            if (piece_j - 1) >= 0: # handling index out of range
-                if piece_i - 1 >= 0: # handling index out of range
+            if (piece_j - 1) >= 0:  # handling index out of range
+                if piece_i - 1 >= 0:  # handling index out of range
                     if not board[piece_i - 1][piece_j - 1].is_empty():
                         available_spots.append((piece_i - 1, piece_j - 1))
-                if (piece_i + 1) < board.CELL_COUNT: # handling index out of range
+                if (piece_i + 1) < board.CELL_COUNT:  # handling index out of range
                     if not board[piece_i + 1][piece_j - 1].is_empty():
                         available_spots.append((piece_i + 1, piece_j - 1))
         else:
@@ -168,11 +170,11 @@ class Pawn(AbstractPiece):
             else:
                 available_spots.append((piece_i, piece_j + 1))
 
-            if (piece_j + 1) < board.CELL_COUNT: # handling index out of range
-                if (piece_i - 1) >= 0: # handling index out of range
+            if (piece_j + 1) < board.CELL_COUNT:  # handling index out of range
+                if (piece_i - 1) >= 0:  # handling index out of range
                     if not board[piece_i - 1][piece_j + 1].is_empty():
                         available_spots.append((piece_i - 1, piece_j + 1))
-                if (piece_i + 1) <= board.CELL_COUNT: # handling index out of range
+                if (piece_i + 1) <= board.CELL_COUNT:  # handling index out of range
                     if not board[piece_i + 1][piece_j + 1].is_empty():
                         available_spots.append((piece_i + 1, piece_j + 1))
 
@@ -187,7 +189,9 @@ class Pawn(AbstractPiece):
 
 
 class Rook(AbstractPiece):
-    def find_available_spots(self, board: Board, coordinate: tuple[int, int] = None, **kwargs):
+    def find_available_spots(
+        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+    ):
         coordinate = coordinate if coordinate else self.coordinate
 
         # try using the cache
@@ -200,11 +204,11 @@ class Rook(AbstractPiece):
         available_spots = []
         for i in range(piece_i):
             available_spots.append((i, piece_j))
-        for i in range(piece_i + 1, self.CELL_COUNT):
+        for i in range(piece_i + 1, board.CELL_COUNT):
             available_spots.append((i, piece_j))
         for j in range(piece_j):
             available_spots.append((piece_i, j))
-        for j in range(piece_j + 1, self.CELL_COUNT):
+        for j in range(piece_j + 1, board.CELL_COUNT):
             available_spots.append((piece_i, j))
 
         self.available_spots_cache[coordinate] = available_spots
@@ -212,7 +216,9 @@ class Rook(AbstractPiece):
 
 
 class Knight(AbstractPiece):
-    def find_available_spots(self, board: Board, coordinate: tuple[int, int] = None, **kwargs):
+    def find_available_spots(
+        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+    ):
         coordinate = coordinate if coordinate else self.coordinate
 
         # try using the cache
@@ -227,8 +233,9 @@ class Knight(AbstractPiece):
         for i in [-2, 2]:
             for j in [-1, 1]:
                 # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= self.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= self.CELL_COUNT):
+                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
+                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
+                ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
@@ -236,10 +243,11 @@ class Knight(AbstractPiece):
         for i in [-1, 1]:
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= self.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= self.CELL_COUNT):
+                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
+                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
+                ):
                     continue
-                
+
                 available_spots.append((piece_i + i, piece_j + j))
                 available_spots.append((piece_i - i, piece_j + j))
 
@@ -248,33 +256,39 @@ class Knight(AbstractPiece):
 
 
 class Bishop(AbstractPiece):
-    def find_available_spots(self, board: Board, coordinate: tuple[int, int] = None, **kwargs):
+    def find_available_spots(
+        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+    ):
         coordinate = coordinate if coordinate else self.coordinate
 
         available_spots = self.available_spots_cache.get(coordinate)
         if available_spots:
             return available_spots
-            
+
         piece_i = coordinate[0]
         piece_j = coordinate[1]
+        available_spots = []
         for i in range(1, board.CELL_COUNT):
 
             # optimize the loop
-            if (piece_i - i < 0 or piece_i - i >= self.CELL_COUNT) or (
-                piece_j - i < 0 or piece_j - i >= self.CELL_COUNT):
+            if (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT) or (
+                piece_j - i < 0 or piece_j - i >= board.CELL_COUNT
+            ):
                 continue
 
-            available_spots.append((piece_i - i, piece_j - i)) # diagonal up left
-            available_spots.append((piece_i + i, piece_j - i)) # diagonal up right
-            available_spots.append((piece_i - i, piece_j + i)) # diagonal down left
-            available_spots.append((piece_i + i, piece_j + i)) # diagonal down left
+            available_spots.append((piece_i - i, piece_j - i))  # diagonal up left
+            available_spots.append((piece_i + i, piece_j - i))  # diagonal up right
+            available_spots.append((piece_i - i, piece_j + i))  # diagonal down left
+            available_spots.append((piece_i + i, piece_j + i))  # diagonal down left
 
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
 class Queen(AbstractPiece):
-    def find_available_spots(self, board: Board, coordinate: tuple[int, int] = None, **kwargs):
+    def find_available_spots(
+        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+    ):
         coordinate = coordinate if coordinate else self.coordinate
 
         available_spots = self.available_spots_cache.get(coordinate)
@@ -282,35 +296,37 @@ class Queen(AbstractPiece):
             return available_spots
         piece_i = coordinate[0]
         piece_j = coordinate[1]
-
-        for i in range(1, board.CELL_COUNT): # DIAGONAL
+        available_spots = []
+        for i in range(1, board.CELL_COUNT):  # DIAGONAL
 
             # optimize the loop
-            if (piece_i - i < 0 or piece_i - i >= self.CELL_COUNT) or (
-                piece_j - i < 0 or piece_j - i >= self.CELL_COUNT):
+            if (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT) or (
+                piece_j - i < 0 or piece_j - i >= board.CELL_COUNT
+            ):
                 continue
 
-            available_spots.append((piece_i - i, piece_j - i)) # up left
-            available_spots.append((piece_i + i, piece_j - i)) # up right
-            available_spots.append((piece_i - i, piece_j + i)) # down left
-            available_spots.append((piece_i + i, piece_j + i)) # down left
-        
+            available_spots.append((piece_i - i, piece_j - i))  # up left
+            available_spots.append((piece_i + i, piece_j - i))  # up right
+            available_spots.append((piece_i - i, piece_j + i))  # down left
+            available_spots.append((piece_i + i, piece_j + i))  # down left
+
         # HORIZENTAL
-        for i in range(piece_i): # left
+        for i in range(piece_i):  # left
             available_spots.append((i, piece_j))
-        for i in range(piece_i + 1, self.CELL_COUNT): # right
+        for i in range(piece_i + 1, board.CELL_COUNT):  # right
             available_spots.append((i, piece_j))
-        for j in range(piece_j): # up
+        for j in range(piece_j):  # up
             available_spots.append((piece_i, j))
-        for j in range(piece_j + 1, self.CELL_COUNT): # down
+        for j in range(piece_j + 1, board.CELL_COUNT):  # down
             available_spots.append((piece_i, j))
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
-        
 
 
 class King(AbstractPiece):
-    def find_available_spots(self, board: Board, coordinate: tuple[int, int] = None, **kwargs):
+    def find_available_spots(
+        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+    ):
         coordinate = coordinate if coordinate else self.coordinate
 
         available_spots = self.available_spots_cache.get(coordinate)
@@ -318,19 +334,20 @@ class King(AbstractPiece):
             return available_spots
         piece_i = coordinate[0]
         piece_j = coordinate[1]
-
-        for i in [-1, 1]:
-            for j in [-1, 1]:
+        available_spots = []
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
                 # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= self.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= self.CELL_COUNT):
+                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
+                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
+                ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
 
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
-    
+
 
 basic_board_instance = Board(pygame.Surface((settings.HIGHT, settings.HIGHT)))
 
@@ -348,12 +365,12 @@ if __name__ == "__main__":
     image = pack.get_texture(settings.TEXTURE_NAMES["board"])
     image = pygame.transform.scale(image, (settings.HIGHT, settings.HIGHT))
     board = Board(image)
-    run = True
-    while run:
+    RUN = True
+    while RUN:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                RUN = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()

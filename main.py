@@ -24,8 +24,14 @@ def main():
         settings.TEXTURE_NAMES["w_pawn"],
         (board.image.get_width() // 8, board.image.get_height() // 8)
         )
+    king_texture = texture_pack.get_texture(
+        settings.TEXTURE_NAMES["w_king"],
+        (board.image.get_width() // 8, board.image.get_height() // 8)
+        )
     pawn = game_elements.Pawn(image=pawn_texture, player=player, coordinate=(1, 7))
+    king = game_elements.King(image=king_texture, player=player, coordinate=(4, 6))
     board.get_cell(*pawn.coordinate).set_piece(pawn)
+    board.get_cell(*king.coordinate).set_piece(king)
 
     available_cells: list[game_elements.Cell] = []
     run = True
@@ -50,7 +56,6 @@ def main():
                     available_cells.append(board.get_cell(*spot))
 
         # drawings
-        
         screen.blit(board.image, board.rect)
         if available_cells:
             for cell in available_cells:
