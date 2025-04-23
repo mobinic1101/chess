@@ -66,17 +66,21 @@ class TexturePack:
             all_textures[texture_name] = pygame.image.load(texture_path)
         return all_textures
 
-    def get_texture(self, name: str) -> pygame.Surface:
+    def get_texture(self, name: str, size: tuple[int, int] = None) -> pygame.Surface:
         """get texture by its name (filename)
-        Example .get_texture("board.png")
+        Example .get_texture("board.png", (500, 500))
 
         Args:
             name (str): texture filename
+            size (tuple[width, height]): if given, the output texture will get scaled at the specified width and height
 
         Returns:
             pygame.Surface: texture/image (instance of pygame.Surface)
         """        
-        return self.all_textures[name]
+        texture = self.all_textures[name]
+        if size is not None:
+            texture = pygame.transform.scale(texture, size)
+        return texture
     
     def __repr__(self):
         return f"TexturePack(name={self.name}, texture_dir={self.texture_dir})"   

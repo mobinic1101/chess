@@ -1,42 +1,82 @@
 import pygame
 import settings
+import abstracts
+import texture_loader
+import game_elements
+import player as game_players
+import datatypes
+from motion import Motion
 
 
-screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
-pygame.display.set_caption(settings.CAPTION)
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
+    pygame.display.set_caption(settings.CAPTION)
+    clock = pygame.time.Clock()
 
+    texture_pack = texture_loader.TexturePackLoader(settings.TEXTURE_DIR).get_pack()
 
-class UserInput:
-    def __init__(self):
-        self.inputs = []
+    player = game_players.Human(name="human", color="white")
+    board = game_elements.Board(
+        texture_pack.get_texture(settings.TEXTURE_NAMES["board"], (settings.HIGHT, settings.HIGHT))
+        )
+    pawn_texture = texture_pack.get_texture(
+        settings.TEXTURE_NAMES["w_pawn"],
+        (board.image.get_width() // 8, board.image.get_height() // 8)
+        )
+    pawn = game_elements.Pawn(image=pawn_texture, player=player, coordinate=(1, 7))
+    board.get_cell(*pawn.coordinate).set_piece(pawn)
 
-    def get_input(self, events: list[pygame.event.Event]):
+    available_cells: list[game_elements.Cell] = []
+    run = True
+    while run:
+        clock.tick(settings.FPS)
+        events = pygame.event.get()
         for event in events:
+            if event.type == pygame.QUIT:
+                run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                self.inputs.append(mouse_pos)
-        if len(self.inputs) == 2:
-            inputs = self.inputs.copy()
-            self.inputs.clear()
-            return inputs
-        return None
+                available_cells.clear()
+        
+        if user_input := player.get_input(events):
+            print("USERINPUT =", user_input)
+            source, dest = user_input
+            source_cell = board.get_cell(*user_input[0])
+            dest_cell = board.get_cell(*user_input[1])
+            if not source_cell.is_empty():
+                piece = source_cell.piece
+                available_spots = piece.find_available_spots(board=board, color=player.color)
+                for spot in available_spots:
+                    available_cells.append(board.get_cell(*spot))
 
+        # drawings
+        
+        screen.blit(board.image, board.rect)
+        if available_cells:
+            for cell in available_cells:
+                # rect = pygame.Rect(cell.rect.x, cell.rect.y, cell.image.get_width(), cell.image.get_height())
+                square = pygame.Surface((cell.image.get_width(), cell.image.get_height()))
+                screen.blit(square, cell.rect)
+        for cell in board.get_filled_cells():
+            screen.blit(cell.piece.image, cell.rect)
+        pygame.display.update()
 
-run = True
-import time
-clock = pygame.time.Clock()
-userinput = UserInput()
-while run:
-    clock.tick(60)
-    events = pygame.event.get()
-    for event in events:
-        if event.type == pygame.QUIT:
-            run = False
+if __name__ == "__main__":
+    main()
 
-    coordinates = userinput.get_input(events)
-    if coordinates:
-        print(coordinates)
+# class Game:
+#     def __init__(
+#             self,
+#             player1: abstracts.AbstractPlayer,
+#             player2: abstracts.AbstractPlayer,
+#             time
+#             ):
+#         self.player1 = player1
+#         self.player2 = player2
+#         self.moves: list[datatypes.Move] = []
 
+#     def add_move(self, move: datatypes.Move):
+#         self.moves.append(move)
+    
 
-stack = [1, 2, 3]
-print(f"stack in main.py: {stack}")
+    

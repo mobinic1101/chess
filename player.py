@@ -1,15 +1,14 @@
 import pygame
+import random
 from abstracts import AbstractPlayer
-from game_elements import Board
+from game_elements import Board, basic_board_instance
 
 
 class Human(AbstractPlayer):
-    def __init__(self, name: str, color):
-        super().__init__()
-        self.name = name
-        self.color = color
+    def __init__(self, name: str, color: str):
+        super().__init__(name, color)
         self.inputs = []
-        self.__board = Board()
+        self.__board = basic_board_instance
     
     def get_input(self, events: list[pygame.event.Event]):
         for event in events:
@@ -26,8 +25,17 @@ class Human(AbstractPlayer):
         return None
 
 class Bot(AbstractPlayer):
+    def __init__(self, name, color: str):
+        super().__init__(name, color)
+
     def get_input(self, board: Board) -> tuple[tuple[int, int], tuple[int, int]]:
         """
         Returns:
             tuple: example-> (source: tuple, dest: tuple)
         """
+        cells = board.get_filled_cells()
+        source = random.choice(cells)
+        dest = random.choice(source.piece.find_available_spots(board, color=self.color))
+
+        return (source.coordinate, dest)
+

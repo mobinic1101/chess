@@ -4,7 +4,7 @@ import math
 from typing import SupportsIndex
 
 
-class Mtion:
+class Motion:
     def __init__(self, speed: int):
         self.operations: list[datatypes.Operation] = []
         self.speed = speed

@@ -20,23 +20,43 @@ class AbstractDrawable(pygame.sprite.Sprite, ABC):
         return self.id == other.id
 
 
+class AbstractPlayer(ABC):
+    def __init__(self, name, color: str):
+        self.color = color
+        self.name = name
+    
+    @abstractmethod
+    def get_input(self):
+        pass
+
+
 class AbstractPiece(AbstractDrawable):
-    def __init__(self, image, player: int, coordinate: tuple[int, int]):
+    def __init__(self, image, player: AbstractPlayer, coordinate: tuple[int, int]):
         """
         Args:
-            player: player 1 or 2 (player 1 is You and player 2 os your Opponent)
+            player: player who owns the piece
+            color: the color of the piece
             coordinate (tuple[int, int]): The row and column index of the cell on the board.
         """
         super().__init__(image)
         self.player = player
+        self.color = player.color
         self.coordinate = coordinate
         self.available_spots_cache = {}
 
-    def is_my_piece(self):
-        return self.player == 1
+    def is_my_piece(self, color: str):
+        """provide your color, its gonna tell you whether it is your piece or not.
+
+        Args:
+            color (str): your color
+
+        Returns:
+            Boolean: True if it is your piece
+        """        
+        return color == self.color
 
     @abstractmethod
-    def find_available_spots(self, board, coordinte: tuple[int, int] = None):
+    def find_available_spots(self, board, coordinte: tuple[int, int] = None, **kwargs) -> list[tuple[int, int]]:
         """
         Finds available spots a Piece can move to.
 
@@ -59,8 +79,3 @@ class AbstractInputSource(ABC):
     def get_input(self):
         pass
 
-
-class AbstractPlayer(ABC):
-    @abstractmethod
-    def get_input(self):
-        pass
