@@ -269,17 +269,16 @@ class Bishop(AbstractPiece):
         piece_j = coordinate[1]
         available_spots = []
         for i in range(1, board.CELL_COUNT):
-
-            # optimize the loop
-            if (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT) or (
-                piece_j - i < 0 or piece_j - i >= board.CELL_COUNT
-            ):
-                continue
-
             available_spots.append((piece_i - i, piece_j - i))  # diagonal up left
             available_spots.append((piece_i + i, piece_j - i))  # diagonal up right
             available_spots.append((piece_i - i, piece_j + i))  # diagonal down left
             available_spots.append((piece_i + i, piece_j + i))  # diagonal down left
+
+        # finter out of bound spots:
+        available_spots = [
+            spot
+            for spot in available_spots
+            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)]
 
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
@@ -298,17 +297,16 @@ class Queen(AbstractPiece):
         piece_j = coordinate[1]
         available_spots = []
         for i in range(1, board.CELL_COUNT):  # DIAGONAL
-
-            # optimize the loop
-            if (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT) or (
-                piece_j - i < 0 or piece_j - i >= board.CELL_COUNT
-            ):
-                continue
-
             available_spots.append((piece_i - i, piece_j - i))  # up left
             available_spots.append((piece_i + i, piece_j - i))  # up right
             available_spots.append((piece_i - i, piece_j + i))  # down left
             available_spots.append((piece_i + i, piece_j + i))  # down left
+
+        # finter out of bound spots:
+        available_spots = [
+            spot
+            for spot in available_spots
+            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)]
 
         # HORIZENTAL
         for i in range(piece_i):  # left

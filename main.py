@@ -24,14 +24,14 @@ def main():
         settings.TEXTURE_NAMES["w_pawn"],
         (board.image.get_width() // 8, board.image.get_height() // 8)
         )
-    king_texture = texture_pack.get_texture(
-        settings.TEXTURE_NAMES["w_king"],
+    queen = texture_pack.get_texture(
+        settings.TEXTURE_NAMES["w_queen"],
         (board.image.get_width() // 8, board.image.get_height() // 8)
         )
     pawn = game_elements.Pawn(image=pawn_texture, player=player, coordinate=(1, 7))
-    king = game_elements.King(image=king_texture, player=player, coordinate=(4, 6))
+    queen = game_elements.Queen(image=queen, player=player, coordinate=(4, 6))
     board.get_cell(*pawn.coordinate).set_piece(pawn)
-    board.get_cell(*king.coordinate).set_piece(king)
+    board.get_cell(*queen.coordinate).set_piece(queen)
 
     available_cells: list[game_elements.Cell] = []
     run = True
@@ -69,19 +69,15 @@ def main():
 if __name__ == "__main__":
     main()
 
-# class Game:
-#     def __init__(
-#             self,
-#             player1: abstracts.AbstractPlayer,
-#             player2: abstracts.AbstractPlayer,
-#             time
-#             ):
-#         self.player1 = player1
-#         self.player2 = player2
-#         self.moves: list[datatypes.Move] = []
-
-#     def add_move(self, move: datatypes.Move):
-#         self.moves.append(move)
+class Game:
+    def __init__(
+            self,
+            player1: abstracts.AbstractPlayer,
+            player2: abstracts.AbstractPlayer,
+            time: int
+            ):
+        self.player1 = player1
+        self.player2 = player2
     
 
     
