@@ -23,6 +23,22 @@ class Human(AbstractPlayer):
                         self.__board.get_cell_by_coordinates(inputs[1])
                         )
         return None
+    def get_input(self, events: list[pygame.event.Event]):
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+
+                # check clicked pos is in the area of the board because if it's not
+                # the get_cell_by_coordinates will return None
+                cell_coordinates = self.__board.get_cell_by_coordinates(mouse_pos)
+                if not cell_coordinates:
+                    break
+                self.inputs.append(cell_coordinates)
+                if len(self.inputs) == 2:
+                    inputs = self.inputs.copy()
+                    self.inputs.clear()
+                    return tuple(inputs)
+        return None
 
 class Bot(AbstractPlayer):
     def __init__(self, name, color: str):

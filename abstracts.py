@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 import random
 import pygame
 import pygame.sprite
+
+if TYPE_CHECKING:
+    from datatypes import Move
 
 
 class AbstractDrawable(pygame.sprite.Sprite, ABC):
@@ -24,6 +28,10 @@ class AbstractPlayer(ABC):
     def __init__(self, name, color: str):
         self.color = color
         self.name = name
+        self.moves = []
+
+    def add_move(self, move: 'Move'):
+        self.moves.append(move)
     
     @abstractmethod
     def get_input(self):
@@ -78,4 +86,3 @@ class AbstractInputSource(ABC):
     @abstractmethod
     def get_input(self):
         pass
-
