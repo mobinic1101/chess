@@ -66,7 +66,7 @@ class TexturePack:
             all_textures[texture_name] = pygame.image.load(texture_path)
         return all_textures
 
-    def get_texture(self, name: str, size: tuple[int, int] = None) -> pygame.Surface:
+    def get_texture(self, name: str, size: tuple[int, int] | None = None) -> pygame.Surface:
         """get texture by its name (filename)
         Example .get_texture("board.png", (500, 500))
 
