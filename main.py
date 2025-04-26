@@ -16,22 +16,10 @@ def main():
 
     texture_pack = texture_loader.TexturePackLoader(settings.TEXTURE_DIR).get_pack()
 
-    player = game_players.Human(name="human", color="white")
-    board = game_elements.Board(
-        texture_pack.get_texture(settings.TEXTURE_NAMES["board"], (settings.HIGHT, settings.HIGHT))
-        )
-    pawn_texture = texture_pack.get_texture(
-        settings.TEXTURE_NAMES["w_pawn"],
-        (board.image.get_width() // 8, board.image.get_height() // 8)
-        )
-    queen = texture_pack.get_texture(
-        settings.TEXTURE_NAMES["w_queen"],
-        (board.image.get_width() // 8, board.image.get_height() // 8)
-        )
-    pawn = game_elements.Pawn(image=pawn_texture, player=player, coordinate=(1, 7))
-    queen = game_elements.Queen(image=queen, player=player, coordinate=(4, 6))
-    board.get_cell(*pawn.coordinate).set_piece(pawn)
-    board.get_cell(*queen.coordinate).set_piece(queen)
+    player1 = game_players.Human(name="human", color="white")
+    player2 = game_players.Human(name="human", color="black")
+
+    board = game_elements.get_board(texture_pack, player1, player2)
 
     available_cells: list[game_elements.Cell] = []
     run = True
@@ -44,14 +32,14 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 available_cells.clear()
         
-        if user_input := player.get_input(events):
+        if user_input := player1.get_input(events):
             print("USERINPUT =", user_input)
             source, dest = user_input
             source_cell = board.get_cell(*user_input[0])
             dest_cell = board.get_cell(*user_input[1])
             if not source_cell.is_empty():
                 piece = source_cell.piece
-                available_spots = piece.find_available_spots(board=board, color=player.color)
+                available_spots = piece.find_available_spots(board=board, color=player1.color)
                 for spot in available_spots:
                     available_cells.append(board.get_cell(*spot))
 
@@ -78,6 +66,4 @@ class Game:
             ):
         self.player1 = player1
         self.player2 = player2
-    
-
-    
+        

@@ -1,7 +1,8 @@
 from typing import SupportsIndex
 import logging
 import pygame
-from abstracts import AbstractDrawable, AbstractPiece
+from abstracts import AbstractDrawable, AbstractPiece, AbstractPlayer
+from texture_loader import TexturePack
 import settings
 
 
@@ -86,6 +87,14 @@ class Board(AbstractDrawable):
         return board
 
     def get_cell(self, i, j) -> Cell:
+        """return a cell based on it's row and col index (i and j) on the self.board
+        
+        Args:
+            i: int
+            j: int
+        Returns:
+            Cell
+        """
         cell = self.board[i][j]
         return cell
 
@@ -126,7 +135,7 @@ class Board(AbstractDrawable):
 
 class Pawn(AbstractPiece):
     def find_available_spots(
-        self, board: Board = None, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         """
         Args:
@@ -134,7 +143,7 @@ class Pawn(AbstractPiece):
             coordinate (tuple[int, int], optional):
             **kwargs: a color should be passed here to determine if the piece is white or black
         """
-        if not kwargs.get("color"):
+        if kwargs.get("color") is None:
             raise ValueError(
                 "color should be passed to determine if the piece is white or black"
             )
@@ -149,7 +158,7 @@ class Pawn(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        if self.is_my_piece(kwargs.get("color")):
+        if self.is_my_piece(kwargs["color"]):
             if piece_j > 5:
                 available_spots.append((piece_i, piece_j - 1))
                 available_spots.append((piece_i, piece_j - 2))
@@ -164,7 +173,7 @@ class Pawn(AbstractPiece):
                     if not board[piece_i + 1][piece_j - 1].is_empty():
                         available_spots.append((piece_i + 1, piece_j - 1))
         else:
-            if piece_j > 2:
+            if piece_j < 2:
                 available_spots.append((piece_i, piece_j + 1))
                 available_spots.append((piece_i, piece_j + 2))
             else:
@@ -190,7 +199,7 @@ class Pawn(AbstractPiece):
 
 class Rook(AbstractPiece):
     def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         coordinate = coordinate if coordinate else self.coordinate
 
@@ -217,7 +226,7 @@ class Rook(AbstractPiece):
 
 class Knight(AbstractPiece):
     def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         coordinate = coordinate if coordinate else self.coordinate
 
@@ -233,9 +242,11 @@ class Knight(AbstractPiece):
         for i in [-2, 2]:
             for j in [-1, 1]:
                 # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
-                ):
+                if (
+                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or
+                    (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT) or
+                    (piece_j - j < 0 or piece_j - j >= board.CELL_COUNT)
+                    ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
@@ -243,9 +254,11 @@ class Knight(AbstractPiece):
         for i in [-1, 1]:
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
-                ):
+                if (
+                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or
+                    (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT) or
+                    (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT)
+                    ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
@@ -257,7 +270,7 @@ class Knight(AbstractPiece):
 
 class Bishop(AbstractPiece):
     def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         coordinate = coordinate if coordinate else self.coordinate
 
@@ -286,7 +299,7 @@ class Bishop(AbstractPiece):
 
 class Queen(AbstractPiece):
     def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         coordinate = coordinate if coordinate else self.coordinate
 
@@ -323,7 +336,7 @@ class Queen(AbstractPiece):
 
 class King(AbstractPiece):
     def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] = None, **kwargs
+        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         coordinate = coordinate if coordinate else self.coordinate
 
@@ -347,8 +360,49 @@ class King(AbstractPiece):
         return available_spots
 
 
-basic_board_instance = Board(pygame.Surface((settings.HIGHT, settings.HIGHT)))
+string_to_piece_class: dict[str, AbstractPiece] = {
+    "pawn": Pawn,
+    "rook": Rook,
+    "knight": Knight,
+    "bishop": Bishop,
+    "queen": Queen,
+    "king": King
+}
 
+
+def get_board(
+        texture_pack: TexturePack, player1: AbstractPlayer, player2: AbstractPlayer
+        ) -> Board:
+    """
+    Create a board with pieces for two players.
+
+    Args:
+        texture_pack: texture pack to get textures from
+        player1: first player (you)
+        player2: second player (your opponent)
+
+    Returns:
+        Board: a board with pieces for player1 and player2
+    """
+
+    board_texture = texture_pack.get_texture(settings.TEXTURE_NAMES["board"], settings.BOARD_WIDTH_HIGHT)
+    board = Board(image=board_texture)
+
+    # attaching pieces
+    piece_positions = settings.get_piece_positions(player1)
+    for piece_name in piece_positions.keys():
+        piece_texture: AbstractPiece = texture_pack.get_texture(settings.TEXTURE_NAMES[piece_name], settings.PIECE_WIDTH_HIGHT)
+        Piece = string_to_piece_class[piece_name[2:]]
+        player = player1 if player1.color[0] == piece_name[0] else player2
+
+        for pos in piece_positions[piece_name]:
+            cell = board.get_cell(*pos)
+            piece = Piece(piece_texture, player, pos)
+            cell.set_piece(piece)
+    return board
+
+
+basic_board_instance = Board(pygame.Surface((settings.HIGHT, settings.HIGHT)))
 
 # testing
 if __name__ == "__main__":
