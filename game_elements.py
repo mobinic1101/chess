@@ -145,7 +145,7 @@ class Pawn(AbstractPiece):
         """
         if kwargs.get("color") is None:
             raise ValueError(
-                "color should be passed to determine if the piece is white or black"
+                "color should be passed to determine if the piece is white or black, HINT: pass the player1 (your player) color."
             )
 
         coordinate = self.coordinate if not coordinate else coordinate
@@ -360,7 +360,7 @@ class King(AbstractPiece):
         return available_spots
 
 
-string_to_piece_class: dict[str, AbstractPiece] = {
+string_to_piece_class = {
     "pawn": Pawn,
     "rook": Rook,
     "knight": Knight,
@@ -391,13 +391,15 @@ def get_board(
     # attaching pieces
     piece_positions = settings.get_piece_positions(player1)
     for piece_name in piece_positions.keys():
-        piece_texture: AbstractPiece = texture_pack.get_texture(settings.TEXTURE_NAMES[piece_name], settings.PIECE_WIDTH_HIGHT)
+        piece_texture = texture_pack.get_texture(settings.TEXTURE_NAMES[piece_name], settings.PIECE_WIDTH_HIGHT)
         Piece = string_to_piece_class[piece_name[2:]]
         player = player1 if player1.color[0] == piece_name[0] else player2
 
         for pos in piece_positions[piece_name]:
             cell = board.get_cell(*pos)
             piece = Piece(piece_texture, player, pos)
+            piece.rect.x = cell.rect.x
+            piece.rect.y = cell.rect.y
             cell.set_piece(piece)
     return board
 
