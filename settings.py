@@ -9,11 +9,13 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 FPS = 60
+MOVEMENT_SPEED = 1
 BASE_DIR = Path(os.getcwd())
 WIDTH, HIGHT = (1024, 600)
 CAPTION = "MasterChess"
 TEXTURE_DIR = BASE_DIR / "textures/"
 DEFAULT_TEXTURE_PACK = "pack1"
+AVAILABLE_SPOTS_COLOR = "yellow"
 
 BOARD_WIDTH_HIGHT = (HIGHT, HIGHT)
 # divide BOARD_WIDTH_HIGHT by 8 because a board in a chess game has 8 cells
