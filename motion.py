@@ -18,6 +18,7 @@ class Motion:
             drawable (abstracts.AbstractDrawable): The object to be moved.
             destination (tuple[int, int]): The destination coordinates to move to.
         """
+        # if there is already an operation exists, we just update its destination
         i = self.find_operation(drawable)
         if i is not None:
             operation = self.operations[i]
