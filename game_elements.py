@@ -33,6 +33,7 @@ class Cell(AbstractDrawable):
         return self.piece is None
 
     def set_piece(self, piece: AbstractPiece):
+        piece.coordinate = self.coordinate
         self.piece = piece
 
     def rem_piece(self):
