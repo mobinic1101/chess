@@ -5,8 +5,10 @@ import random
 import pygame
 import pygame.sprite
 
+import game_elements
+
 if TYPE_CHECKING:
-    from datatypes import Move
+    import datatypes
 
 
 class AbstractDrawable(pygame.sprite.Sprite, ABC):
@@ -46,11 +48,13 @@ class AbstractPlayer(ABC):
         self.name = name
         self.moves = []
 
-    def add_move(self, move: "Move"):
+    def add_move(self, move: "datatypes.Move"):
         self.moves.append(move)
 
     @abstractmethod
-    def get_input(self):
+    def get_input(
+        self, board: game_elements.Board, events: list[pygame.event.Event]
+        ) -> "datatypes.Move" | None:
         pass
 
 
@@ -102,5 +106,15 @@ class AbstractPiece(AbstractDrawable):
 
 class AbstractInputSource(ABC):
     @abstractmethod
-    def get_input(self):
+    def get_input(self, board: game_elements.Board, events: list[pygame.event.Event] = None, **kwargs) -> "datatypes.Move" | None:
+        """
+        Abstract method to get input for a move.
+
+        Args:
+            board (Board): The chess board instance.
+            events (list[pygame.event.Event], optional): List of pygame events (used for Human input).
+
+        Returns:
+            datatypes.Move | None: The move to be made, or None if no valid move is found.
+        """
         pass

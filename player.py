@@ -1,44 +1,25 @@
 import pygame
-import random
-from abstracts import AbstractPlayer
-from game_elements import Board, basic_board_instance
+import datatypes
+from abstracts import AbstractPlayer, AbstractInputSource
+from game_elements import Board
 
 
-class Human(AbstractPlayer):
-    def __init__(self, name: str, color: str):
+class Player(AbstractPlayer):
+    def __init__(self, name: str, color: str, input_source: AbstractInputSource):
         super().__init__(name, color)
-        self.inputs = []
-        self.__board = basic_board_instance
-    
-    def get_input(self, events: list[pygame.event.Event]):
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
+        self.input_source = input_source
 
-                # check clicked pos is in the area of the board because if it's not
-                # the get_cell_by_coordinates will return None
-                cell_coordinates = self.__board.get_cell_by_coordinates(mouse_pos)
-                if not cell_coordinates:
-                    break
-                self.inputs.append(cell_coordinates)
-                if len(self.inputs) == 2:
-                    inputs = self.inputs.copy()
-                    self.inputs.clear()
-                    return tuple(inputs)
-        return None
-
-class Bot(AbstractPlayer):
-    def __init__(self, name, color: str):
-        super().__init__(name, color)
-
-    def get_input(self, board: Board) -> tuple[tuple[int, int], tuple[int, int]]:
+    def get_input(
+        self, board: Board, events: list[pygame.event.Event] = None, **kwargs
+    ) -> datatypes.Move | None:
         """
+        Delegate the get_input method to the input_source instance.
+
+        Args:
+            board (Board): The chess board instance.
+            events (list[pygame.event.Event], optional): List of pygame events.
+
         Returns:
-            tuple: example-> (source: tuple, dest: tuple)
+            datatypes.Move | None: The move returned by the input_source.
         """
-        cells = board.get_filled_cells()
-        source = random.choice(cells)
-        dest = random.choice(source.piece.find_available_spots(board, color=self.color))
-
-        return (source.coordinate, dest)
-
+        return self.input_source.get_input(board=board, events=events, **kwargs)
