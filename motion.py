@@ -25,7 +25,7 @@ class Motion:
             operation.coordinate = destination
             return
 
-        new_operation = datatypes.Operation(drawable, destination)
+        new_operation = datatypes.Operation(object=drawable, coordinate=destination)
         self.operations.append(new_operation)
 
     def remove_operation(self, drawable: abstracts.AbstractDrawable):
@@ -45,8 +45,8 @@ class Motion:
     def apply_motion(self):
         for operation in self.operations:
             dx, dy = ( # the direction arrow
-                operation.coordinate.x - operation.object.rect.x,
-                operation.coordinate.y - operation.object.rect.y,
+                operation.coordinate[0] - operation.object.rect.x,
+                operation.coordinate[1] - operation.object.rect.y,
             )
             distance = math.sqrt(dx ** 2 + dy ** 2) # length of the arrow
             if distance == 0: # avoid ZeroDivisionError
@@ -59,11 +59,10 @@ class Motion:
             # if the distance between the object and the target is less than the step
             # we can reach the target instantly and we can stop the operation
             if distance < math.sqrt(step_x ** 2 + step_y ** 2):
-                operation.object.rect.x = operation.coordinate.x
-                operation.object.rect.y = operation.coordinate.y
+                operation.object.rect.x = operation.coordinate[0]
+                operation.object.rect.y = operation.coordinate[1]
                 self.remove_operation(operation.object)
                 continue
 
             operation.object.move_x(step_x)
             operation.object.move_y(step_y)
-

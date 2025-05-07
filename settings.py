@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 FPS = 60
-MOVEMENT_SPEED = 1
+MOVEMENT_SPEED = 10
 BASE_DIR = Path(os.getcwd())
 WIDTH, HIGHT = (1024, 600)
 CAPTION = "MasterChess"
@@ -81,3 +81,4 @@ def get_piece_positions(player: "AbstractPlayer") -> dict[str, list[tuple[int, i
             "w_queen": [(3, 7)],
             "w_king": [(4, 7)],
         }
+        

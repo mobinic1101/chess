@@ -4,6 +4,7 @@ import pygame
 from abstracts import AbstractDrawable, AbstractPiece, AbstractPlayer
 from texture_loader import TexturePack
 import settings
+from helpers import invert_coordinate
 
 
 class Cell(AbstractDrawable):
@@ -19,7 +20,9 @@ class Cell(AbstractDrawable):
         Args:
             image (pygame.Surface): The image to be used for the cell.
             coordinate (tuple[int, int]): The row and column index of the cell on the board.
-            piece (AbstractPiece | None): The piece to be placed on the cell, defaults to None.
+            piece (AbstractPiece | None): The piece to be placed on the cell, defaults to None
+            **the cell object can modify its piece attribute** like
+            changing its piece.coordiante or piece.rect
         """
 
         super().__init__(image)
@@ -31,6 +34,24 @@ class Cell(AbstractDrawable):
         ```return self.piece is None```
         """
         return self.piece is None
+    
+    def set_coordiante(self, coordiante: tuple[int, int]):
+        """
+        set the coordinate of the cell
+        if self.piece is not None **its gonna change the piece's coordinate and rect too**.
+        
+        Args:
+            coordiante (tuple[int, int]): The new coordinate to set.
+        """
+        self.coordinate = coordiante
+        self.rect.x = coordiante[0] * self.width
+        self.rect.y = coordiante[1] * self.hight
+        # modifying self.piece
+        if self.piece is not None:
+            self.piece.coordinate = coordiante
+            self.piece.rect.x = self.rect.x
+            self.piece.rect.y = self.rect.y
+        
 
     def set_piece(self, piece: AbstractPiece):
         piece.coordinate = self.coordinate
@@ -57,7 +78,8 @@ class Board(AbstractDrawable):
     def __init__(self, image):
         super().__init__(image)
         logging.info("initializing board...")
-        self.board = self._init_board()
+        # board is a 2D list
+        self.board: list[list[Cell]] = self._init_board()
 
     def _init_board(self) -> list[list[Cell]]:
         """creates and initializes Cell objects, sets their width, hight, x and y
@@ -87,9 +109,42 @@ class Board(AbstractDrawable):
         # print(board)
         return board
 
+    def copy(self):
+        """
+        return a copy of the board's current state;
+        **not an exact copy** because the player attribute of pieces inside cells is
+        a reference the the current objects player, meanning if you change anything in player,
+        its gonna change in the copied object too.
+
+        but if you wanna get an exact copy you can modify the abstracts.AbstractPiece.copy() method
+        to set a copy of current objects player to the copied piece.
+
+        Returns:
+            board (Board): __description__
+        """
+        board = Board(self.image.copy())
+        filled_cells = self.get_filled_cells()
+        for cell in filled_cells:
+            piece = cell.piece
+            piece_copy = piece.copy()
+            cell_copy = board.get_cell(*cell.coordinate)
+            cell_copy.set_piece(piece_copy)
+            piece_copy.rect.x = cell_copy.rect.x
+            piece_copy.rect.y = cell_copy.rect.y
+        return board
+    
+    def rotate_180(self):
+        """rotate the board 180 degrees, **it's gonna modify the objects properties**
+        so if you wanna keep them you can first create a copy of the cucrrent object and then rotate it.
+        """
+        for row in self.board:
+            for cell in row:
+                cell.set_coordiante(invert_coordinate(cell.coordinate))
+                # no need to adjsut cell.piece becuase the cell.set_coordiante handles that.
+
     def get_cell(self, i, j) -> Cell:
         """return a cell based on it's row and col index (i and j) on the self.board
-        
+
         Args:
             i: int
             j: int
@@ -135,7 +190,7 @@ class Board(AbstractDrawable):
 
 
 class Pawn(AbstractPiece):
-    def find_available_spots(
+    def calculate_moves(
         self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         """
@@ -149,66 +204,69 @@ class Pawn(AbstractPiece):
                 "color should be passed to determine if the piece is white or black, HINT: pass the player1 (your player) color."
             )
 
-        coordinate = self.coordinate if not coordinate else coordinate
-
-        # try using the cache
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
-
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        if self.is_my_piece(kwargs["color"]):
-            if piece_j > 5:
-                available_spots.append((piece_i, piece_j - 1))
-                available_spots.append((piece_i, piece_j - 2))
-            else:
-                available_spots.append((piece_i, piece_j - 1))
 
-            if (piece_j - 1) >= 0:  # handling index out of range
-                if piece_i - 1 >= 0:  # handling index out of range
-                    if not board[piece_i - 1][piece_j - 1].is_empty():
+        if self.is_my_piece(kwargs["color"]):
+            # Normal moves (moving forward)
+            if piece_j > 0 and board[piece_i][piece_j - 1].is_empty():
+                available_spots.append((piece_i, piece_j - 1))
+                # Double move if on starting position
+                if piece_j == 6 and board[piece_i][piece_j - 2].is_empty():
+                    available_spots.append((piece_i, piece_j - 2))
+
+            # Capturing moves (diagonal moves)
+            if piece_j > 0:
+                if piece_i - 1 >= 0:  # Left diagonal
+                    if (
+                        not board[piece_i - 1][piece_j - 1].is_empty() and
+                        not board[piece_i - 1][piece_j - 1].piece.is_my_piece(kwargs["color"])
+                    ):
                         available_spots.append((piece_i - 1, piece_j - 1))
-                if (piece_i + 1) < board.CELL_COUNT:  # handling index out of range
-                    if not board[piece_i + 1][piece_j - 1].is_empty():
+                if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
+                    if (
+                        not board[piece_i + 1][piece_j - 1].is_empty() and
+                        not board[piece_i + 1][piece_j - 1].piece.is_my_piece(kwargs["color"])
+                    ):
                         available_spots.append((piece_i + 1, piece_j - 1))
         else:
-            if piece_j < 2:
+            # Normal moves (moving forward)
+            if (
+                piece_j < board.CELL_COUNT - 1
+                and board[piece_i][piece_j + 1].is_empty()
+            ):
                 available_spots.append((piece_i, piece_j + 1))
-                available_spots.append((piece_i, piece_j + 2))
-            else:
-                available_spots.append((piece_i, piece_j + 1))
+                # Double move if on starting position
+                if piece_j == 1 and board[piece_i][piece_j + 2].is_empty():
+                    available_spots.append((piece_i, piece_j + 2))
 
-            if (piece_j + 1) < board.CELL_COUNT:  # handling index out of range
-                if (piece_i - 1) >= 0:  # handling index out of range
-                    if not board[piece_i - 1][piece_j + 1].is_empty():
+            # Capturing moves (diagonal moves)
+            if piece_j < board.CELL_COUNT - 1:
+                if piece_i - 1 >= 0:  # Left diagonal
+                    if (
+                        not board[piece_i - 1][piece_j + 1].is_empty() and
+                        board[piece_i - 1][piece_j + 1].piece.is_my_piece(kwargs["color"])
+                    ):
                         available_spots.append((piece_i - 1, piece_j + 1))
-                if (piece_i + 1) <= board.CELL_COUNT:  # handling index out of range
-                    if not board[piece_i + 1][piece_j + 1].is_empty():
+                if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
+                    if (
+                        not board[piece_i + 1][piece_j + 1].is_empty() and
+                        board[piece_i + 1][piece_j + 1].piece.is_my_piece(kwargs["color"])
+                    ):
                         available_spots.append((piece_i + 1, piece_j + 1))
 
-        # filtering available_spots that are out of bounds
-        available_spots = [
-            spot
-            for spot in available_spots
-            if 0 <= spot[0] < board.CELL_COUNT and 0 <= spot[1] < board.CELL_COUNT
-        ]
-        self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
 class Rook(AbstractPiece):
-    def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+    def calculate_moves(
+        self,
+        board: Board,
+        coordinate: tuple[int, int] | None = None,
+        _all=False,
+        **kwargs,
     ):
-        coordinate = coordinate if coordinate else self.coordinate
-
-        # try using the cache
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
-
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
@@ -226,16 +284,13 @@ class Rook(AbstractPiece):
 
 
 class Knight(AbstractPiece):
-    def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+    def calculate_moves(
+        self,
+        board: Board,
+        coordinate: tuple[int, int] | None = None,
+        _all=False,
+        **kwargs,
     ):
-        coordinate = coordinate if coordinate else self.coordinate
-
-        # try using the cache
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
-
         piece_i = coordinate[0]
         piece_j = coordinate[1]
 
@@ -244,10 +299,10 @@ class Knight(AbstractPiece):
             for j in [-1, 1]:
                 # prevent IndexOutOfRange
                 if (
-                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or
-                    (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT) or
-                    (piece_j - j < 0 or piece_j - j >= board.CELL_COUNT)
-                    ):
+                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT)
+                    or (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT)
+                    or (piece_j - j < 0 or piece_j - j >= board.CELL_COUNT)
+                ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
@@ -256,10 +311,10 @@ class Knight(AbstractPiece):
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
                 if (
-                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or
-                    (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT) or
-                    (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT)
-                    ):
+                    (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT)
+                    or (piece_j + j < 0 or piece_j + j >= board.CELL_COUNT)
+                    or (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT)
+                ):
                     continue
 
                 available_spots.append((piece_i + i, piece_j + j))
@@ -270,15 +325,13 @@ class Knight(AbstractPiece):
 
 
 class Bishop(AbstractPiece):
-    def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+    def calculate_moves(
+        self,
+        board: Board,
+        coordinate: tuple[int, int] | None = None,
+        _all=False,
+        **kwargs,
     ):
-        coordinate = coordinate if coordinate else self.coordinate
-
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
-
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
@@ -292,21 +345,21 @@ class Bishop(AbstractPiece):
         available_spots = [
             spot
             for spot in available_spots
-            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)]
+            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
+        ]
 
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
 class Queen(AbstractPiece):
-    def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+    def calculate_moves(
+        self,
+        board: Board,
+        coordinate: tuple[int, int] | None = None,
+        _all=False,
+        **kwargs,
     ):
-        coordinate = coordinate if coordinate else self.coordinate
-
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
@@ -320,7 +373,8 @@ class Queen(AbstractPiece):
         available_spots = [
             spot
             for spot in available_spots
-            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)]
+            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
+        ]
 
         # HORIZENTAL
         for i in range(piece_i):  # left
@@ -336,14 +390,13 @@ class Queen(AbstractPiece):
 
 
 class King(AbstractPiece):
-    def find_available_spots(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+    def calculate_moves(
+        self,
+        board: Board,
+        coordinate: tuple[int, int] | None = None,
+        _all=False,
+        **kwargs,
     ):
-        coordinate = coordinate if coordinate else self.coordinate
-
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots:
-            return available_spots
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
@@ -367,13 +420,13 @@ string_to_piece_class = {
     "knight": Knight,
     "bishop": Bishop,
     "queen": Queen,
-    "king": King
+    "king": King,
 }
 
 
 def get_board(
-        texture_pack: TexturePack, player1: AbstractPlayer, player2: AbstractPlayer
-        ) -> Board:
+    texture_pack: TexturePack, player1: AbstractPlayer, player2: AbstractPlayer
+) -> Board:
     """
     Create a board with pieces for two players.
 
@@ -386,13 +439,17 @@ def get_board(
         Board: a board with pieces for player1 and player2
     """
 
-    board_texture = texture_pack.get_texture(settings.TEXTURE_NAMES["board"], settings.BOARD_WIDTH_HIGHT)
+    board_texture = texture_pack.get_texture(
+        settings.TEXTURE_NAMES["board"], settings.BOARD_WIDTH_HIGHT
+    )
     board = Board(image=board_texture)
 
     # attaching pieces
     piece_positions = settings.get_piece_positions(player1)
     for piece_name in piece_positions.keys():
-        piece_texture = texture_pack.get_texture(settings.TEXTURE_NAMES[piece_name], settings.PIECE_WIDTH_HIGHT)
+        piece_texture = texture_pack.get_texture(
+            settings.TEXTURE_NAMES[piece_name], settings.PIECE_WIDTH_HIGHT
+        )
         Piece = string_to_piece_class[piece_name[2:]]
         player = player1 if player1.color[0] == piece_name[0] else player2
 

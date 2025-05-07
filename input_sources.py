@@ -11,13 +11,8 @@ class Human(AbstractInputSource):
         self.inputs: list[tuple[int, int]] = []
 
     def get_input(
-        self, events: list[pygame.event.Event], board: Board = None, **kwargs
+        self, color: str, events: list[pygame.event.Event], board: Board = None
     ) -> datatypes.Move | None:
-        if events is None:
-            raise ValueError("passing events parameter is required for Human input")
-        if not kwargs.get("color"):
-            raise ValueError("color parameter is required for Human input; pass it as a keyword argument in **kwargs parameter.")
-
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
@@ -39,9 +34,9 @@ class Human(AbstractInputSource):
                     self.inputs.clear()
                     inputs = datatypes.Move(source=inputs[0], dest=inputs[1])
                     # validate destination pos
-                    source_cell = board.get_cell(inputs.source)
+                    source_cell = board.get_cell(*inputs.source)
                     available_spots = source_cell.piece.find_available_spots(
-                        board, color=self.color
+                        board, color=color
                     )
                     if inputs.dest not in available_spots:
                         break
@@ -50,9 +45,19 @@ class Human(AbstractInputSource):
 
 
 class Bot(AbstractInputSource):
-    def get_input(self, board: Board, events: list[pygame.event.Event] = None, **kwargs) -> datatypes.Move | None:
+    def get_input(
+        self, color: str, board: Board, events: list[pygame.event.Event] = None
+    ) -> datatypes.Move | None:
         # the Bot does not use events and color, so we can safely ignore them
-        cells = board.get_filled_cells()
-        source = random.choice(cells)
-        dest = random.choice(source.piece.find_available_spots(board, color=self.color))
-        return datatypes.Move(source=source, dest=dest)
+        cells = [cell for cell in board.get_filled_cells() if cell.piece.color == color]
+        possible_destinations = []
+        while 1:
+            source = random.choice(cells)
+            available_spots = source.piece.find_available_spots(board, color=color)
+            if available_spots:
+                possible_destinations = available_spots
+                break
+
+        # choose a random destination
+        dest = random.choice(possible_destinations)
+        return datatypes.Move(source=source.coordinate, dest=dest)
