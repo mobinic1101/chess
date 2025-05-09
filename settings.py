@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 FPS = 60
-MOVEMENT_SPEED = 10
+MOVEMENT_SPEED = 15
 BASE_DIR = Path(os.getcwd())
 WIDTH, HIGHT = (1024, 600)
 CAPTION = "MasterChess"
@@ -24,7 +24,7 @@ BOARD_WIDTH_HIGHT = (HIGHT, HIGHT)
 PIECE_WIDTH_HIGHT = (BOARD_WIDTH_HIGHT[0] // 8, BOARD_WIDTH_HIGHT[0] // 8)
 
 TEXTURE_NAMES = {
-    "board" :"board.jpg",
+    "board": "board.jpg",
     "b_pawn": "b-pawn.png",
     "b_knight": "b-knight.png",
     "b_bishop": "b-bishop.png",
@@ -81,4 +81,3 @@ def get_piece_positions(player: "AbstractPlayer") -> dict[str, list[tuple[int, i
             "w_queen": [(3, 7)],
             "w_king": [(4, 7)],
         }
-        

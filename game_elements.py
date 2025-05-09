@@ -4,7 +4,7 @@ import pygame
 from abstracts import AbstractDrawable, AbstractPiece, AbstractPlayer
 from texture_loader import TexturePack
 import settings
-from helpers import invert_coordinate
+# from helpers import invert_coordinate
 
 
 class Cell(AbstractDrawable):
@@ -22,7 +22,7 @@ class Cell(AbstractDrawable):
             coordinate (tuple[int, int]): The row and column index of the cell on the board.
             piece (AbstractPiece | None): The piece to be placed on the cell, defaults to None
             **the cell object can modify its piece attribute** like
-            changing its piece.coordiante or piece.rect
+            changing its piece.coordinate or piece.rect
         """
 
         super().__init__(image)
@@ -34,30 +34,34 @@ class Cell(AbstractDrawable):
         ```return self.piece is None```
         """
         return self.piece is None
-    
-    def set_coordiante(self, coordiante: tuple[int, int]):
+
+    def set_coordinate(self, coordinate: tuple[int, int]):
         """
         set the coordinate of the cell
         if self.piece is not None **its gonna change the piece's coordinate and rect too**.
-        
+
         Args:
-            coordiante (tuple[int, int]): The new coordinate to set.
+            coordinate (tuple[int, int]): The new coordinate to set.
         """
-        self.coordinate = coordiante
-        self.rect.x = coordiante[0] * self.width
-        self.rect.y = coordiante[1] * self.hight
+        self.coordinate = coordinate
+        self.rect.x = coordinate[0] * self.width
+        self.rect.y = coordinate[1] * self.hight
         # modifying self.piece
         if self.piece is not None:
-            self.piece.coordinate = coordiante
+            self.piece.coordinate = coordinate
             self.piece.rect.x = self.rect.x
             self.piece.rect.y = self.rect.y
-        
 
     def set_piece(self, piece: AbstractPiece):
+        """set the piece of the cell and set the piece's coordinate to the cell's coordinate
+        Args:
+            piece (AbstractPiece): The piece to be placed on the cell.
+        """
         piece.coordinate = self.coordinate
         self.piece = piece
 
     def rem_piece(self):
+        """remove the piece from the cell and set the cell's piece to None"""
         self.piece = None
 
     @property
@@ -69,7 +73,7 @@ class Cell(AbstractDrawable):
         return self.image.get_height()
 
     def __str__(self):
-        return f"Cell(id={self.id}, piece={self.piece})"
+        return f"Cell(id={self.id}, coordinate={self.coordinate}, piece={self.piece})"
 
 
 class Board(AbstractDrawable):
@@ -132,15 +136,19 @@ class Board(AbstractDrawable):
             piece_copy.rect.x = cell_copy.rect.x
             piece_copy.rect.y = cell_copy.rect.y
         return board
-    
-    def rotate_180(self):
-        """rotate the board 180 degrees, **it's gonna modify the objects properties**
-        so if you wanna keep them you can first create a copy of the cucrrent object and then rotate it.
-        """
-        for row in self.board:
-            for cell in row:
-                cell.set_coordiante(invert_coordinate(cell.coordinate))
-                # no need to adjsut cell.piece becuase the cell.set_coordiante handles that.
+
+    # def rotate_180(self) -> "Board":
+    #     """return a new board rotated 180 degrees."""
+    #     filled_cells = self.get_filled_cells().copy()
+    #     board = Board(self.image)
+    #     for source_cell in filled_cells:
+    #         new_coordinate = invert_coordinate(source_cell.coordinate, board)
+    #         dest_cell = board.get_cell(*new_coordinate)
+    #         dest_cell.set_piece(source_cell.piece)
+    #         piece = dest_cell.piece
+    #         piece.rect.x = piece.coordinate[0] * piece.image.get_width()
+    #         piece.rect.y = piece.coordinate[1] * piece.image.get_height()
+    #     return board
 
     def get_cell(self, i, j) -> Cell:
         """return a cell based on it's row and col index (i and j) on the self.board
@@ -219,16 +227,14 @@ class Pawn(AbstractPiece):
             # Capturing moves (diagonal moves)
             if piece_j > 0:
                 if piece_i - 1 >= 0:  # Left diagonal
-                    if (
-                        not board[piece_i - 1][piece_j - 1].is_empty() and
-                        not board[piece_i - 1][piece_j - 1].piece.is_my_piece(kwargs["color"])
-                    ):
+                    if not board[piece_i - 1][piece_j - 1].is_empty() and not board[
+                        piece_i - 1
+                    ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
                         available_spots.append((piece_i - 1, piece_j - 1))
                 if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
-                    if (
-                        not board[piece_i + 1][piece_j - 1].is_empty() and
-                        not board[piece_i + 1][piece_j - 1].piece.is_my_piece(kwargs["color"])
-                    ):
+                    if not board[piece_i + 1][piece_j - 1].is_empty() and not board[
+                        piece_i + 1
+                    ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
                         available_spots.append((piece_i + 1, piece_j - 1))
         else:
             # Normal moves (moving forward)
@@ -244,16 +250,14 @@ class Pawn(AbstractPiece):
             # Capturing moves (diagonal moves)
             if piece_j < board.CELL_COUNT - 1:
                 if piece_i - 1 >= 0:  # Left diagonal
-                    if (
-                        not board[piece_i - 1][piece_j + 1].is_empty() and
-                        board[piece_i - 1][piece_j + 1].piece.is_my_piece(kwargs["color"])
-                    ):
+                    if not board[piece_i - 1][piece_j + 1].is_empty() and board[
+                        piece_i - 1
+                    ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
                         available_spots.append((piece_i - 1, piece_j + 1))
                 if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
-                    if (
-                        not board[piece_i + 1][piece_j + 1].is_empty() and
-                        board[piece_i + 1][piece_j + 1].piece.is_my_piece(kwargs["color"])
-                    ):
+                    if not board[piece_i + 1][piece_j + 1].is_empty() and board[
+                        piece_i + 1
+                    ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
                         available_spots.append((piece_i + 1, piece_j + 1))
 
         return available_spots

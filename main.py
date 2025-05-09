@@ -1,6 +1,5 @@
 import logging
 import pygame
-from pygame.sprite import Sprite
 import abstracts
 import game_elements
 import settings
@@ -8,7 +7,8 @@ import player
 import input_sources
 from motion import Motion
 from texture_loader import TexturePackLoader
-from helpers import SimpleSprite, move_piece
+from helpers import SimpleSprite
+from datatypes import Move
 
 pygame.init()
 
@@ -40,7 +40,7 @@ class Game:
         else:
             self.current_player = self.player1
 
-    def get_other_player(self):
+    def get_other_player(self) -> abstracts.AbstractPlayer:
         if self.current_player.color == self.player1.color:
             return self.player2
         else:
@@ -80,15 +80,15 @@ class Game:
         available_cells = []
         logging.info("entering main loop...")
         while self.is_running:
+            self.clock.tick(settings.FPS)
+            # handling events
             events = pygame.event.get()
             self._handle_closing_event(events)
             # handling simple clicks
             if clicked_pos := self.get_clicked_pos(events):
                 if available_cells:
                     available_cells.clear()
-                elif coordinate := self.board.get_cell_by_coordinates(
-                    clicked_pos
-                ):
+                elif coordinate := self.board.get_cell_by_coordinates(clicked_pos):
                     if (
                         cell := self.board.get_cell(*coordinate)
                     ) in self.board.get_filled_cells():
@@ -113,10 +113,21 @@ class Game:
                 dest_cell: game_elements.Cell = self.board.get_cell(
                     *player_input.dest
                 )
-                piece = source_cell.piece
-                move_piece(source_cell, dest_cell)
 
-                self.motion.add_operation(piece, (dest_cell.rect.x, dest_cell.rect.y))
+                # handle eating pieces
+                if dest_cell.piece:
+                    self.current_player.eated_pieces.append(dest_cell.piece)
+
+                # moving pieces
+                dest_cell.set_piece(source_cell.piece)
+                source_cell.rem_piece()
+
+                self.motion.add_operation(dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y))
+
+                # adding to player's move
+                self.current_player.add_move(
+                    Move(source=player_input.source, dest=player_input.dest)
+                )
 
                 # switching player
                 self.switch_players()
@@ -130,6 +141,7 @@ class Game:
             ]
             self.screen.fill("white")
             self.draw_items(self.screen, self.board, *available_cells, *pieces)
+                
 
 
 if __name__ == "__main__":
@@ -137,15 +149,17 @@ if __name__ == "__main__":
         settings.DEFAULT_TEXTURE_PACK
     )
 
+    human = input_sources.Human()
+    bot = input_sources.Bot()
     player1 = player.Player(
         name="Player 1",
         color="white",
-        input_source=input_sources.Human(),
+        input_source=human,
     )
     player2 = player.Player(
         name="Player 2",
         color="black",
-        input_source=input_sources.Bot(),
+        input_source=bot,
     )
 
     board = game_elements.get_board(texture_pack, player1, player2)

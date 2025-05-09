@@ -3,6 +3,7 @@ import random
 import datatypes
 from abstracts import AbstractInputSource
 from game_elements import Board
+# from helpers import invert_coordinate
 
 
 class Human(AbstractInputSource):
@@ -45,10 +46,18 @@ class Human(AbstractInputSource):
 
 
 class Bot(AbstractInputSource):
+    # def get_board_copy(self, board: Board) -> Board:
+    #     """
+    #     Creates a copy of the board and returns it.
+    #     This is useful for the bot to simulate moves without affecting the actual game state.
+    #     """
+    #     return board.copy()
+
     def get_input(
         self, color: str, board: Board, events: list[pygame.event.Event] = None
     ) -> datatypes.Move | None:
-        # the Bot does not use events and color, so we can safely ignore them
+        # the Bot does not use events, so we can safely ignore them
+        # board = board.rotate_180()
         cells = [cell for cell in board.get_filled_cells() if cell.piece.color == color]
         possible_destinations = []
         while 1:

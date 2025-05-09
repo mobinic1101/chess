@@ -27,13 +27,19 @@ class AbstractDrawable(pygame.sprite.Sprite, ABC):
 
 
 class AbstractInputSource(ABC):
+    def __init__(self):
+        self.board = None
+
+    # def set_board(self, board: "game_elements.Board"):
+    #     self.board = board
+    
     @abstractmethod
     def get_input(
         self,
         color: str,
         board: "game_elements.Board",
         events: list[pygame.event.Event] = None,
-    ):
+    ) -> "datatypes.Move | None":
         """
         Abstract method to get input for a move.
 
@@ -48,13 +54,12 @@ class AbstractInputSource(ABC):
         """
         pass
 
-
 class AbstractPlayer(ABC):
     def __init__(
         self,
         name,
         color: str,
-        input_source: AbstractInputSource,
+        input_source: AbstractInputSource
     ):
         """
         Initializes an AbstractPlayer with a given name and color.
@@ -63,8 +68,6 @@ class AbstractPlayer(ABC):
             name (str): The name of the player.
             color (str): The color of the player, should be either 'white' or 'black'.
             input_source (AbstractInputSource): The input source for the player (e.g., Human or Bot).
-            board (Board, optional): The chess board instance. Defaults to None.
-            If not provided, the player should set it later using the set_board method.
 
         Raises:
             ValueError: If the color is not 'white' or 'black'.
@@ -79,11 +82,12 @@ class AbstractPlayer(ABC):
         self.name = name
         self.input_source = input_source
         self.moves = []
+        self.eated_pieces: list["datatypes.Piece"] = []
 
     def add_move(self, move: "datatypes.Move"):
         self.moves.append(move)
 
-    def get_input(self, board, events: list[pygame.event.Event]):
+    def get_input(self, board, events: list[pygame.event.Event]) -> "datatypes.Move | None":
         """
         Delegate the get_input method to the input_source instance.
 
@@ -147,6 +151,11 @@ class AbstractPiece(AbstractDrawable):
         """
         return color == self.color
 
+    def set_coordinate(self, cooridante: tuple[int, int]) -> None:
+        self.rect.x = cooridante[0] * self.image.get_width()
+        self.rect.y = cooridante[1] * self.image.get_height()
+        self.coordinate = cooridante
+
     def get_from_cache(
         self, coordinate: tuple[int, int]
     ) -> list[tuple[int, int]] | None:
@@ -176,8 +185,7 @@ class AbstractPiece(AbstractDrawable):
         Args:
             board (Board): The board to search for available spots.
             coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
-              if not provided use self.coordinate (current piece coordiante).
-            all (bool): If True, find all available spots, otherwise find only valid moves.
+              if not provided use self.coordinate (current piece coordinate).
 
         Returns:
             list[tuple[int, int]]: A list of coordinates of available spots.

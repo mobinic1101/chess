@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from pydantic import BaseModel
 import abstracts
 
