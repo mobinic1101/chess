@@ -41,43 +41,43 @@ TEXTURE_NAMES = {
 
 
 def get_piece_positions(player: "AbstractPlayer") -> dict[str, list[tuple[int, int]]]:
-    """get piece positions based on the player, meanning
-    if player is white it will return WHITE piece positions in down side of the board
-    or if the player is black it will return BLACK piece positions in down side of the board.
+    """Get piece positions based on the player, meaning
+    if the player is white, it will return WHITE piece positions on the bottom side of the board,
+    or if the player is black, it will return BLACK piece positions on the bottom side of the board.
 
     Args:
-        player (AbstractPlayer): _description_
+        player (AbstractPlayer): The player object.
 
     Returns:
-        dict[str, list[tuple[int, int]]]: _description_
+        dict[str, list[tuple[int, int]]]: A dictionary mapping piece names to their initial positions.
     """
     if player.color == "black":
         return {
-            "b_pawn": [(i, 6) for i in range(8)],
-            "b_knight": [(1, 7), (6, 7)],
-            "b_bishop": [(2, 7), (5, 7)],
-            "b_rook": [(0, 7), (7, 7)],
-            "b_queen": [(3, 7)],
-            "b_king": [(4, 7)],
-            "w_pawn": [(i, 1) for i in range(8)],
-            "w_knight": [(1, 0), (6, 0)],
-            "w_bishop": [(2, 0), (5, 0)],
-            "w_rook": [(0, 0), (7, 0)],
-            "w_queen": [(3, 0)],
-            "w_king": [(4, 0)],
+            "b_pawn": [(6, i) for i in range(8)],
+            "b_knight": [(7, 1), (7, 6)],
+            "b_bishop": [(7, 2), (7, 5)],
+            "b_rook": [(7, 0), (7, 7)],
+            "b_queen": [(7, 3)],
+            "b_king": [(7, 4)],
+            "w_pawn": [(1, i) for i in range(8)],
+            "w_knight": [(0, 1), (0, 6)],
+            "w_bishop": [(0, 2), (0, 5)],
+            "w_rook": [(0, 0), (0, 7)],
+            "w_queen": [(0, 3)],
+            "w_king": [(0, 4)],
         }
     else:
         return {
-            "b_pawn": [(i, 1) for i in range(8)],
-            "b_knight": [(1, 0), (6, 0)],
-            "b_bishop": [(2, 0), (5, 0)],
-            "b_rook": [(0, 0), (7, 0)],
-            "b_queen": [(3, 0)],
-            "b_king": [(4, 0)],
-            "w_pawn": [(i, 6) for i in range(8)],
-            "w_knight": [(1, 7), (6, 7)],
-            "w_bishop": [(2, 7), (5, 7)],
-            "w_rook": [(0, 7), (7, 7)],
-            "w_queen": [(3, 7)],
-            "w_king": [(4, 7)],
+            "b_pawn": [(1, i) for i in range(8)],
+            "b_knight": [(0, 1), (0, 6)],
+            "b_bishop": [(0, 2), (0, 5)],
+            "b_rook": [(0, 0), (0, 7)],
+            "b_queen": [(0, 3)],
+            "b_king": [(0, 4)],
+            "w_pawn": [(6, i) for i in range(8)],
+            "w_knight": [(7, 1), (7, 6)],
+            "w_bishop": [(7, 2), (7, 5)],
+            "w_rook": [(7, 0), (7, 7)],
+            "w_queen": [(7, 3)],
+            "w_king": [(7, 4)],
         }

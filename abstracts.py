@@ -168,7 +168,15 @@ class AbstractPiece(AbstractDrawable):
         Returns:
             list[tuple[int, int]] | None: A list of coordinates of available spots or None of not found.
         """
-        return self.available_spots_cache.get(coordinate)
+        available_spots = self.available_spots_cache.get(coordinate)
+        if available_spots is None:
+            return None
+        # check if the coordinate is still valid
+        if self.coordinate != coordinate:
+            # remove the coordinate from the cache
+            del self.available_spots_cache[coordinate]
+            return None
+        return available_spots
 
     @abstractmethod
     def calculate_moves(
@@ -185,7 +193,7 @@ class AbstractPiece(AbstractDrawable):
         Args:
             board (Board): The board to search for available spots.
             coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
-              if not provided use self.coordinate (current piece coordinate).
+            if not passed, the piece's current coordinate will be used.
 
         Returns:
             list[tuple[int, int]]: A list of coordinates of available spots.

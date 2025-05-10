@@ -62,7 +62,7 @@ class Bot(AbstractInputSource):
         possible_destinations = []
         while 1:
             source = random.choice(cells)
-            available_spots = source.piece.find_available_spots(board, color=color)
+            available_spots = source.piece.find_available_spots(board, color=color, opponenet=True)
             if available_spots:
                 possible_destinations = available_spots
                 break

@@ -93,21 +93,19 @@ class Board(AbstractDrawable):
         # set the cell width and hight based on the result of division.
         cell_width = cell_hight = self.image.get_width() // self.CELL_COUNT
         board = []
-        cell_id = 1
         for i in range(self.CELL_COUNT):
             row = []
             for j in range(self.CELL_COUNT):
                 cell = Cell(
                     pygame.Surface(size=(cell_width, cell_hight)), coordinate=(i, j)
                 )
-                cell.rect.x = i * cell_width
-                cell.rect.y = j * cell_width
+                cell.rect.x = j * cell_width
+                cell.rect.y = i * cell_width
 
                 # aligning cells with board texture
                 cell.rect.x += self.rect.x
                 cell.rect.y += self.rect.y
 
-                cell_id += 1
                 row.append(cell)
             board.append(row)
         # print(board)
@@ -216,74 +214,121 @@ class Pawn(AbstractPiece):
         piece_j = coordinate[1]
         available_spots = []
 
-        if self.is_my_piece(kwargs["color"]):
-            # Normal moves (moving forward)
-            if piece_j > 0 and board[piece_i][piece_j - 1].is_empty():
-                available_spots.append((piece_i, piece_j - 1))
-                # Double move if on starting position
-                if piece_j == 6 and board[piece_i][piece_j - 2].is_empty():
-                    available_spots.append((piece_i, piece_j - 2))
+        # calculating spots for the player1
+        if not kwargs.get("opponent"):
+            if self.is_my_piece(kwargs["color"]):
+                # Normal moves (moving forward)
+                if piece_j > 0 and board[piece_i][piece_j - 1].is_empty():
+                    available_spots.append((piece_i, piece_j - 1))
+                    # Double move if on starting position
+                    if piece_j == 6 and board[piece_i][piece_j - 2].is_empty():
+                        available_spots.append((piece_i, piece_j - 2))
 
-            # Capturing moves (diagonal moves)
-            if piece_j > 0:
-                if piece_i - 1 >= 0:  # Left diagonal
-                    if not board[piece_i - 1][piece_j - 1].is_empty() and not board[
-                        piece_i - 1
-                    ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
-                        available_spots.append((piece_i - 1, piece_j - 1))
-                if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
-                    if not board[piece_i + 1][piece_j - 1].is_empty() and not board[
-                        piece_i + 1
-                    ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
-                        available_spots.append((piece_i + 1, piece_j - 1))
+                # Capturing moves (diagonal moves)
+                if piece_j > 0:
+                    if piece_i - 1 >= 0:  # Left diagonal
+                        if not board[piece_i - 1][piece_j - 1].is_empty() and not board[
+                            piece_i - 1
+                        ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i - 1, piece_j - 1))
+                    if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
+                        if not board[piece_i + 1][piece_j - 1].is_empty() and not board[
+                            piece_i + 1
+                        ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i + 1, piece_j - 1))
+            else:
+                # Normal moves (moving forward)
+                if (
+                    piece_j < board.CELL_COUNT - 1
+                    and board[piece_i][piece_j + 1].is_empty()
+                ):
+                    available_spots.append((piece_i, piece_j + 1))
+                    # Double move if on starting position
+                    if piece_j == 1 and board[piece_i][piece_j + 2].is_empty():
+                        available_spots.append((piece_i, piece_j + 2))
+
+                # Capturing moves (diagonal moves)
+                if piece_j < board.CELL_COUNT - 1:
+                    if piece_i - 1 >= 0:  # Left diagonal
+                        if not board[piece_i - 1][piece_j + 1].is_empty() and board[
+                            piece_i - 1
+                        ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i - 1, piece_j + 1))
+                    if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
+                        if not board[piece_i + 1][piece_j + 1].is_empty() and board[
+                            piece_i + 1
+                        ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i + 1, piece_j + 1))
+
+        # calculating spots for the opponent (maybe the bot)
         else:
-            # Normal moves (moving forward)
-            if (
-                piece_j < board.CELL_COUNT - 1
-                and board[piece_i][piece_j + 1].is_empty()
-            ):
-                available_spots.append((piece_i, piece_j + 1))
-                # Double move if on starting position
-                if piece_j == 1 and board[piece_i][piece_j + 2].is_empty():
-                    available_spots.append((piece_i, piece_j + 2))
+            if self.is_my_piece(kwargs["color"]):
+                # Normal moves (moving forward)
+                if piece_j < board.CELL_COUNT - 1 and board[piece_i][piece_j + 1].is_empty():
+                    available_spots.append((piece_i, piece_j + 1))
+                    # Double move if on starting position
+                    if piece_j == 1 and board[piece_i][piece_j + 2].is_empty():
+                        available_spots.append((piece_i, piece_j + 2))
 
-            # Capturing moves (diagonal moves)
-            if piece_j < board.CELL_COUNT - 1:
-                if piece_i - 1 >= 0:  # Left diagonal
-                    if not board[piece_i - 1][piece_j + 1].is_empty() and board[
-                        piece_i - 1
-                    ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
-                        available_spots.append((piece_i - 1, piece_j + 1))
-                if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
-                    if not board[piece_i + 1][piece_j + 1].is_empty() and board[
-                        piece_i + 1
-                    ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
-                        available_spots.append((piece_i + 1, piece_j + 1))
+                # Capturing moves (diagonal moves)
+                if piece_j < board.CELL_COUNT - 1:
+                    if piece_i - 1 >= 0:
+                        # Left diagonal
+                        if not board[piece_i - 1][piece_j + 1].is_empty() and not board[
+                            piece_i - 1
+                        ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i - 1, piece_j + 1))
+                    if piece_i + 1 < board.CELL_COUNT:
+                        # Right diagonal
+                        if not board[piece_i + 1][piece_j + 1].is_empty() and not board[
+                            piece_i + 1
+                        ][piece_j + 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i + 1, piece_j + 1))
+            else:
+                # Normal moves (moving forward)
+                if piece_j > 0 and board[piece_i][piece_j - 1].is_empty():
+                    available_spots.append((piece_i, piece_j - 1))
+                    # Double move if on starting position
+                    if piece_j == 6 and board[piece_i][piece_j - 2].is_empty():
+                        available_spots.append((piece_i, piece_j - 2))
 
+                # Capturing moves (diagonal moves)
+                if piece_j > 0:
+                    if piece_i - 1 >= 0:  # Left diagonal
+                        if not board[piece_i - 1][piece_j - 1].is_empty() and not board[
+                            piece_i - 1
+                        ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i - 1, piece_j - 1))
+                    if piece_i + 1 < board.CELL_COUNT:  # Right diagonal
+                        if not board[piece_i + 1][piece_j - 1].is_empty() and not board[
+                            piece_i + 1
+                        ][piece_j - 1].piece.is_my_piece(kwargs["color"]):
+                            available_spots.append((piece_i + 1, piece_j - 1))
+
+        # filter out of bound spots:
+        available_spots = [
+            spot
+            for spot in available_spots
+            if (0 <= spot[0] < board.CELL_COUNT)
+            and (0 <= spot[1] < board.CELL_COUNT)
+        ]
+        # Filter out-of-bound spots
+        available_spots = [
+            spot
+            for spot in available_spots
+            if 0 <= spot[0] < board.CELL_COUNT and 0 <= spot[1] < board.CELL_COUNT
+        ]
         return available_spots
 
 
 class Rook(AbstractPiece):
-    def calculate_moves(
-        self,
-        board: Board,
-        coordinate: tuple[int, int] | None = None,
-        _all=False,
-        **kwargs,
-    ):
+    def calculate_moves(self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        for i in range(piece_i):
-            available_spots.append((i, piece_j))
-        for i in range(piece_i + 1, board.CELL_COUNT):
-            available_spots.append((i, piece_j))
-        for j in range(piece_j):
-            available_spots.append((piece_i, j))
-        for j in range(piece_j + 1, board.CELL_COUNT):
-            available_spots.append((piece_i, j))
-
-        self.available_spots_cache[coordinate] = available_spots
+        
+        for col in range(piece_j + 1, board.CELL_COUNT): # left
+            available_spots.append((piece_i, col))
         return available_spots
 
 
@@ -292,7 +337,6 @@ class Knight(AbstractPiece):
         self,
         board: Board,
         coordinate: tuple[int, int] | None = None,
-        _all=False,
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -324,7 +368,6 @@ class Knight(AbstractPiece):
                 available_spots.append((piece_i + i, piece_j + j))
                 available_spots.append((piece_i - i, piece_j + j))
 
-        self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
@@ -333,7 +376,6 @@ class Bishop(AbstractPiece):
         self,
         board: Board,
         coordinate: tuple[int, int] | None = None,
-        _all=False,
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -352,7 +394,6 @@ class Bishop(AbstractPiece):
             if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
         ]
 
-        self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
@@ -361,7 +402,6 @@ class Queen(AbstractPiece):
         self,
         board: Board,
         coordinate: tuple[int, int] | None = None,
-        _all=False,
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -389,7 +429,6 @@ class Queen(AbstractPiece):
             available_spots.append((piece_i, j))
         for j in range(piece_j + 1, board.CELL_COUNT):  # down
             available_spots.append((piece_i, j))
-        self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
@@ -398,7 +437,6 @@ class King(AbstractPiece):
         self,
         board: Board,
         coordinate: tuple[int, int] | None = None,
-        _all=False,
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -414,7 +452,6 @@ class King(AbstractPiece):
 
                 available_spots.append((piece_i + i, piece_j + j))
 
-        self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
 
