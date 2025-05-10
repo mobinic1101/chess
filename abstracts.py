@@ -152,8 +152,8 @@ class AbstractPiece(AbstractDrawable):
         return color == self.color
 
     def set_coordinate(self, cooridante: tuple[int, int]) -> None:
-        self.rect.x = cooridante[0] * self.image.get_width()
-        self.rect.y = cooridante[1] * self.image.get_height()
+        self.rect.x = cooridante[1] * self.image.get_width()
+        self.rect.y = cooridante[0] * self.image.get_height()
         self.coordinate = cooridante
 
     def get_from_cache(
