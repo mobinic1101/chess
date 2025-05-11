@@ -32,7 +32,7 @@ def invert_coordinate(coordinate: tuple[int, int], board: "Board") -> tuple[int,
     x = -coordinate[0] - 1
     y = -coordinate[1] - 1
 
-    # onverting x and y to positive values/indexes
+    # overriding x and y to positive values/indexes
     x = x if x >= 0 else board.CELL_COUNT - abs(x)
     y = y if y >= 0 else board.CELL_COUNT - abs(y)
 
@@ -41,4 +41,4 @@ def invert_coordinate(coordinate: tuple[int, int], board: "Board") -> tuple[int,
 
 if __name__ == "__main__":
         from game_elements import Board
-        print(invert_coordinate((-1, -1), Board))
+        print(invert_coordinate((3, -1), Board))

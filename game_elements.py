@@ -198,27 +198,21 @@ class Board(AbstractDrawable):
 
 class Pawn(AbstractPiece):
     def calculate_moves(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+        self, board: Board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         """
         Args:
             board (Board, optional):
             coordinate (tuple[int, int], optional):
-            **kwargs: a color should be passed here to determine if the piece is white or black
+            **kwargs (optional):
         """
-        if kwargs.get("color") is None:
-            raise ValueError(
-                "color should be passed to determine if the piece is white or black, HINT: pass the player1 (your player) color."
-            )
-
-        color = kwargs.get("color")
         opponent = kwargs.get("opponent", False)
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
         UP = -1
         DOWN = +1
-
+        
         # the direction can also be used for horizontal movements
         if not opponent:
             direction = UP if self.is_my_piece(color) else DOWN
@@ -226,7 +220,7 @@ class Pawn(AbstractPiece):
             direction = DOWN if self.is_my_piece(color) else UP
 
         # normal moves (either up or down)
-        if board.CELL_COUNT > piece_i + direction >= 0:
+        if (board.CELL_COUNT > piece_i + direction >= 0):
             if board.get_cell(piece_i + direction, piece_j).piece is None:
                 available_spots.append((piece_i + direction, piece_j))
                 # Double move
@@ -235,11 +229,10 @@ class Pawn(AbstractPiece):
                 ) and (piece_i == 6):
                     available_spots.append((piece_i + 2 * direction, piece_j))
                 elif (
-                    (not opponent and direction == DOWN)
-                    or (opponent and direction == DOWN)
+                    (not opponent and direction == DOWN) or (opponent and direction == DOWN)
                 ) and (piece_i == 1):
                     available_spots.append((piece_i + 2 * direction, piece_j))
-
+            
             # diagonal moves (either downside or upside)
             if board.CELL_COUNT > piece_j + 1 >= 0:
                 cell = board.get_cell(piece_i + direction, piece_j + 1)
@@ -261,14 +254,48 @@ class Pawn(AbstractPiece):
 
 class Rook(AbstractPiece):
     def calculate_moves(
-        self, board: Board, coordinate: tuple[int, int] | None = None, **kwargs
+        self, board: Board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
     ):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
 
-        for col in range(piece_j + 1, board.CELL_COUNT):  # left
-            available_spots.append((piece_i, col))
+        for j in range(piece_j + 1, board.CELL_COUNT): # right
+            print(f"going right: {piece_i, j}")
+            cell = board.get_cell(piece_i , j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((piece_i, j))
+                break
+            available_spots.append((piece_i, j))
+
+        for j in range(piece_j - 1, -1, -1): # left
+            print(f"going left: {piece_i, j}")
+            cell = board.get_cell(piece_i, j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((piece_i, j))
+                break
+            available_spots.append((piece_i, j))
+            
+        for i in range(piece_i + 1, board.CELL_COUNT): # down
+            print(f"going downwards: {i, piece_j}")
+            cell = board.get_cell(i, piece_j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((i, piece_j))
+                break
+            available_spots.append((i, piece_j))
+
+        for i in range(piece_i - 1, -1, -1): # up
+            print(f"going upwards: {i, piece_j}")
+            cell = board.get_cell(i, piece_j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((i, piece_j))
+                break
+            available_spots.append((i, piece_j))
+
         return available_spots
 
 
@@ -276,6 +303,7 @@ class Knight(AbstractPiece):
     def calculate_moves(
         self,
         board: Board,
+        color: str,
         coordinate: tuple[int, int] | None = None,
         **kwargs,
     ):
@@ -292,9 +320,12 @@ class Knight(AbstractPiece):
                     or (piece_j - j < 0 or piece_j - j >= board.CELL_COUNT)
                 ):
                     continue
-
-                available_spots.append((piece_i + i, piece_j + j))
-                available_spots.append((piece_i + i, piece_j - j))
+                cell = board.get_cell(piece_i + i, piece_j + j)
+                cell2 = board.get_cell(piece_i + i, piece_j - j)
+                if (cell.piece is None) or cell.piece.color != color:
+                    available_spots.append((piece_i + i, piece_j + j))
+                if (cell2.piece is None) or cell2.piece.color!=color:
+                    available_spots.append((piece_i + i, piece_j - j))
         for i in [-1, 1]:
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
@@ -304,9 +335,12 @@ class Knight(AbstractPiece):
                     or (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT)
                 ):
                     continue
-
-                available_spots.append((piece_i + i, piece_j + j))
-                available_spots.append((piece_i - i, piece_j + j))
+                cell = board.get_cell(piece_i + i, piece_j + j)
+                cell2 = board.get_cell(piece_i - i, piece_j + j)
+                if (cell.piece is None) or cell.piece.color != color:
+                    available_spots.append((piece_i + i, piece_j + j))
+                if (cell2.piece is None) or cell2.piece.color != color:
+                    available_spots.append((piece_i - i, piece_j + j))
 
         return available_spots
 
@@ -315,6 +349,7 @@ class Bishop(AbstractPiece):
     def calculate_moves(
         self,
         board: Board,
+        color: str,
         coordinate: tuple[int, int] | None = None,
         **kwargs,
     ):
@@ -327,7 +362,7 @@ class Bishop(AbstractPiece):
             available_spots.append((piece_i - i, piece_j + i))  # diagonal down left
             available_spots.append((piece_i + i, piece_j + i))  # diagonal down left
 
-        # finter out of bound spots:
+        # filter out of bound spots:
         available_spots = [
             spot
             for spot in available_spots
@@ -341,6 +376,7 @@ class Queen(AbstractPiece):
     def calculate_moves(
         self,
         board: Board,
+        color:str,
         coordinate: tuple[int, int] | None = None,
         **kwargs,
     ):
@@ -353,14 +389,14 @@ class Queen(AbstractPiece):
             available_spots.append((piece_i - i, piece_j + i))  # down left
             available_spots.append((piece_i + i, piece_j + i))  # down left
 
-        # finter out of bound spots:
+        # filter out of bound spots:
         available_spots = [
             spot
             for spot in available_spots
             if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
         ]
 
-        # HORIZENTAL
+        # HORIZONTAL AND VERTICAL MOVES
         for i in range(piece_i):  # left
             available_spots.append((i, piece_j))
         for i in range(piece_i + 1, board.CELL_COUNT):  # right
@@ -376,6 +412,7 @@ class King(AbstractPiece):
     def calculate_moves(
         self,
         board: Board,
+        color: str,
         coordinate: tuple[int, int] | None = None,
         **kwargs,
     ):
@@ -449,6 +486,8 @@ basic_board_instance = Board(pygame.Surface((settings.HIGHT, settings.HIGHT)))
 if __name__ == "__main__":
     import pygame
     from texture_loader import TexturePackLoader
+    from player import Player
+    from input_sources import Human
 
     texturepackloader = TexturePackLoader(settings.TEXTURE_DIR)
     pack = texturepackloader.get_pack(settings.DEFAULT_TEXTURE_PACK)
@@ -457,7 +496,31 @@ if __name__ == "__main__":
 
     image = pack.get_texture(settings.TEXTURE_NAMES["board"])
     image = pygame.transform.scale(image, (settings.HIGHT, settings.HIGHT))
+    player1 = Player(
+        name="Player 1",
+        color="white",
+        input_source=Human(),
+    )
+    player2 = Player(
+        name="Player 2",
+        color="black",
+        input_source=Human(),
+    )
     board = Board(image)
+    board[7][7].set_piece(
+        Rook(
+            pack.get_texture(settings.TEXTURE_NAMES["b_rook"], size=settings.PIECE_WIDTH_HIGHT),
+            player2,
+            (7, 7),
+        ).set_coordinate((7, 7))
+    )
+    board[0][0].set_piece(
+        Rook(
+            pack.get_texture(settings.TEXTURE_NAMES["w_rook"], size=settings.PIECE_WIDTH_HIGHT),
+            player1,
+            (0, 0),
+        ).set_coordinate((0, 0))
+    )
     RUN = True
     while RUN:
 
@@ -471,8 +534,16 @@ if __name__ == "__main__":
                 if rowcol:
                     i, j = rowcol
                     cell = board[i][j]
-                    cell.image.fill("black")
-                    board.image.blit(cell.image, cell.rect)
+                    if cell.piece:
+                        print(cell.piece)
+                    else:
+                        print("empty cell")
+                    available_spots = cell.piece.find_available_spots(
+                        board, color=cell.piece.color
+                    )
+                    print(f"Available spots for {cell.piece}: {available_spots}")
 
         screen.blit(board.image, board.rect)
+        for cell in board.get_filled_cells():
+            screen.blit(cell.piece.image, cell.piece.rect)
         pygame.display.update()

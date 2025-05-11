@@ -151,10 +151,11 @@ class AbstractPiece(AbstractDrawable):
         """
         return color == self.color
 
-    def set_coordinate(self, cooridante: tuple[int, int]) -> None:
-        self.rect.x = cooridante[1] * self.image.get_width()
-        self.rect.y = cooridante[0] * self.image.get_height()
-        self.coordinate = cooridante
+    def set_coordinate(self, coordinate: tuple[int, int]):
+        self.rect.x = coordinate[1] * self.image.get_width()
+        self.rect.y = coordinate[0] * self.image.get_height()
+        self.coordinate = coordinate
+        return self
 
     def get_from_cache(
         self, coordinate: tuple[int, int]
@@ -180,18 +181,19 @@ class AbstractPiece(AbstractDrawable):
 
     @abstractmethod
     def calculate_moves(
-        self, board, coordinate: tuple[int, int] | None = None, **kwargs
+        self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
     ) -> list[tuple[int, int]]:
         pass
 
     def find_available_spots(
-        self, board, coordinate: tuple[int, int] | None = None, **kwargs
+        self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
     ) -> list[tuple[int, int]]:
         """
         Finds available spots a Piece can move to.
 
         Args:
             board (Board): The board to search for available spots.
+            color (str): need to check if the piece is your piece or not (for catching moves).
             coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
             if not passed, the piece's current coordinate will be used.
 
@@ -204,7 +206,7 @@ class AbstractPiece(AbstractDrawable):
         if available_spots := self.get_from_cache(coordinate):
             return available_spots
 
-        available_spots = self.calculate_moves(board, coordinate, **kwargs)
+        available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
         # cache the result
         self.available_spots_cache[coordinate] = available_spots
         return available_spots
