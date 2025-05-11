@@ -157,27 +157,27 @@ class AbstractPiece(AbstractDrawable):
         self.coordinate = coordinate
         return self
 
-    def get_from_cache(
-        self, coordinate: tuple[int, int]
-    ) -> list[tuple[int, int]] | None:
-        """
-        Get available spots from cache.
+    # def get_from_cache(
+    #     self, coordinate: tuple[int, int]
+    # ) -> list[tuple[int, int]] | None:
+    #     """
+    #     Get available spots from cache.
 
-        Args:
-            coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
+    #     Args:
+    #         coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
 
-        Returns:
-            list[tuple[int, int]] | None: A list of coordinates of available spots or None of not found.
-        """
-        available_spots = self.available_spots_cache.get(coordinate)
-        if available_spots is None:
-            return None
-        # check if the coordinate is still valid
-        if self.coordinate != coordinate:
-            # remove the coordinate from the cache
-            del self.available_spots_cache[coordinate]
-            return None
-        return available_spots
+    #     Returns:
+    #         list[tuple[int, int]] | None: A list of coordinates of available spots or None of not found.
+    #     """
+    #     available_spots = self.available_spots_cache.get(coordinate)
+    #     if available_spots is None:
+    #         return None
+    #     # check if the coordinate is still valid
+    #     if self.coordinate != coordinate:
+    #         # remove the coordinate from the cache
+    #         del self.available_spots_cache[coordinate]
+    #         return None
+    #     return available_spots
 
     @abstractmethod
     def calculate_moves(
@@ -202,13 +202,13 @@ class AbstractPiece(AbstractDrawable):
         """
         coordinate = coordinate if coordinate else self.coordinate
 
-        # try hitting cache
-        if available_spots := self.get_from_cache(coordinate):
-            return available_spots
+        # # try hitting cache
+        # if available_spots := self.get_from_cache(coordinate):
+        #     return available_spots
 
         available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
-        # cache the result
-        self.available_spots_cache[coordinate] = available_spots
+        # # cache the result
+        # self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
     def __str__(self):
