@@ -1,3 +1,4 @@
+from itertools import cycle
 from typing import SupportsIndex
 import logging
 import pygame
@@ -261,7 +262,7 @@ class Rook(AbstractPiece):
         available_spots = []
 
         for j in range(piece_j + 1, board.CELL_COUNT): # right
-            print(f"going right: {piece_i, j}")
+            # print(f"going right: {piece_i, j}")
             cell = board.get_cell(piece_i , j)
             if cell.piece is not None:
                 if cell.piece.color != color:
@@ -270,7 +271,7 @@ class Rook(AbstractPiece):
             available_spots.append((piece_i, j))
 
         for j in range(piece_j - 1, -1, -1): # left
-            print(f"going left: {piece_i, j}")
+            # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
@@ -279,7 +280,7 @@ class Rook(AbstractPiece):
             available_spots.append((piece_i, j))
             
         for i in range(piece_i + 1, board.CELL_COUNT): # down
-            print(f"going downwards: {i, piece_j}")
+            # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
@@ -288,7 +289,7 @@ class Rook(AbstractPiece):
             available_spots.append((i, piece_j))
 
         for i in range(piece_i - 1, -1, -1): # up
-            print(f"going upwards: {i, piece_j}")
+            # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
@@ -356,11 +357,31 @@ class Bishop(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
+        # example usage: in the loop below when we iterate through directions and encounter a filled cell
+        # we can add the cell to available_spots and add that direction to this set this helps us to
+        # prevent going through the same direction again
+        completed_directions = set()
         for i in range(1, board.CELL_COUNT):
-            available_spots.append((piece_i - i, piece_j - i))  # diagonal up left
-            available_spots.append((piece_i + i, piece_j - i))  # diagonal up right
-            available_spots.append((piece_i - i, piece_j + i))  # diagonal down left
-            available_spots.append((piece_i + i, piece_j + i))  # diagonal down left
+            up_left = piece_i - i, piece_j - i
+            up_right = piece_i - i, piece_j + i
+            down_left = piece_i + i, piece_j - i
+            down_right = piece_i + i, piece_j + i
+            directions = (up_left, up_right, down_left, down_right)
+            for i in range(len(directions)):
+                direction = directions[i]
+                if i in completed_directions:
+                    continue
+                if direction[0] < 0 or direction[0] >= board.CELL_COUNT:
+                    continue
+                if direction[1] < 0 or direction[1] >= board.CELL_COUNT:
+                    continue
+                cell = board.get_cell(*direction)
+                if cell.piece is not None:
+                    if cell.piece.color != color:
+                        available_spots.append(direction)
+                    completed_directions.add(i)
+                    continue
+                available_spots.append(direction)
 
         # filter out of bound spots:
         available_spots = [
@@ -383,28 +404,66 @@ class Queen(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        for i in range(1, board.CELL_COUNT):  # DIAGONAL
-            available_spots.append((piece_i - i, piece_j - i))  # up left
-            available_spots.append((piece_i + i, piece_j - i))  # up right
-            available_spots.append((piece_i - i, piece_j + i))  # down left
-            available_spots.append((piece_i + i, piece_j + i))  # down left
-
-        # filter out of bound spots:
-        available_spots = [
-            spot
-            for spot in available_spots
-            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
-        ]
-
-        # HORIZONTAL AND VERTICAL MOVES
-        for i in range(piece_i):  # left
-            available_spots.append((i, piece_j))
-        for i in range(piece_i + 1, board.CELL_COUNT):  # right
-            available_spots.append((i, piece_j))
-        for j in range(piece_j):  # up
+        
+        for j in range(piece_j + 1, board.CELL_COUNT): # right
+            # print(f"going right: {piece_i, j}")
+            cell = board.get_cell(piece_i , j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((piece_i, j))
+                break
             available_spots.append((piece_i, j))
-        for j in range(piece_j + 1, board.CELL_COUNT):  # down
+
+        for j in range(piece_j - 1, -1, -1): # left
+            # print(f"going left: {piece_i, j}")
+            cell = board.get_cell(piece_i, j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((piece_i, j))
+                break
             available_spots.append((piece_i, j))
+            
+        for i in range(piece_i + 1, board.CELL_COUNT): # down
+            # print(f"going downwards: {i, piece_j}")
+            cell = board.get_cell(i, piece_j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((i, piece_j))
+                break
+            available_spots.append((i, piece_j))
+
+        for i in range(piece_i - 1, -1, -1): # up
+            # print(f"going upwards: {i, piece_j}")
+            cell = board.get_cell(i, piece_j)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append((i, piece_j))
+                break
+            available_spots.append((i, piece_j))
+
+        # diagonal moves
+        completed_directions = set()
+        for i in range(1, board.CELL_COUNT):
+            up_left = piece_i - i, piece_j - i
+            up_right = piece_i - i, piece_j + i
+            down_left = piece_i + i, piece_j - i
+            down_right = piece_i + i, piece_j + i
+            directions = (up_left, up_right, down_left, down_right)
+            for i in range(len(directions)):
+                direction = directions[i]
+                if i in completed_directions:
+                    continue
+                if direction[0] < 0 or direction[0] >= board.CELL_COUNT:
+                    continue
+                if direction[1] < 0 or direction[1] >= board.CELL_COUNT:
+                    continue
+                cell = board.get_cell(*direction)
+                if cell.piece is not None:
+                    if cell.piece.color != color:
+                        available_spots.append(direction)
+                    completed_directions.add(i)
+                    continue
+                available_spots.append(direction)
         return available_spots
 
 
@@ -419,15 +478,27 @@ class King(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        for i in [-1, 0, 1]:
-            for j in [-1, 0, 1]:
-                # prevent IndexOutOfRange
-                if (piece_i + i < 0 or piece_i + i >= board.CELL_COUNT) or (
-                    piece_j + j < 0 or piece_j + j >= board.CELL_COUNT
-                ):
-                    continue
-
-                available_spots.append((piece_i + i, piece_j + j))
+        
+        UP = (piece_i - 1, piece_j)
+        DOWN = (piece_i + 1, piece_j)
+        LEFT = (piece_i, piece_j - 1)
+        RIGHT = (piece_i, piece_j + 1)
+        UP_LEFT = (piece_i - 1, piece_j - 1)
+        UP_RIGHT = (piece_i - 1, piece_j + 1)
+        DOWN_LEFT = (piece_i + 1, piece_j - 1)
+        DOWN_RIGHT = (piece_i + 1, piece_j + 1)
+        directions = [UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT]
+        for direction in directions:
+            if direction[0] < 0 or direction[0] >= board.CELL_COUNT:
+                continue
+            if direction[1] < 0 or direction[1] >= board.CELL_COUNT:
+                continue
+            cell = board.get_cell(*direction)
+            if cell.piece is not None:
+                if cell.piece.color != color:
+                    available_spots.append(direction)
+                continue
+            available_spots.append(direction)
 
         return available_spots
 
