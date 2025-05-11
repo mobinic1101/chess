@@ -32,7 +32,7 @@ class AbstractInputSource(ABC):
 
     # def set_board(self, board: "game_elements.Board"):
     #     self.board = board
-    
+
     @abstractmethod
     def get_input(
         self,
@@ -54,13 +54,9 @@ class AbstractInputSource(ABC):
         """
         pass
 
+
 class AbstractPlayer(ABC):
-    def __init__(
-        self,
-        name,
-        color: str,
-        input_source: AbstractInputSource
-    ):
+    def __init__(self, name, color: str, input_source: AbstractInputSource):
         """
         Initializes an AbstractPlayer with a given name and color.
 
@@ -87,7 +83,9 @@ class AbstractPlayer(ABC):
     def add_move(self, move: "datatypes.Move"):
         self.moves.append(move)
 
-    def get_input(self, board, events: list[pygame.event.Event]) -> "datatypes.Move | None":
+    def get_input(
+        self, board, events: list[pygame.event.Event]
+    ) -> "datatypes.Move | None":
         """
         Delegate the get_input method to the input_source instance.
 
@@ -98,15 +96,13 @@ class AbstractPlayer(ABC):
         Returns:
             datatypes.Move | None: The move returned by the input_source.
         """
-        result = self.input_source.get_input(
-            self.color, board=board, events=events
-        )
+        result = self.input_source.get_input(self.color, board=board, events=events)
         if result is None:
             return None
 
         # check if the piece that the player is trying to move is actually his piece or
         # the dest cell is empty or the dest cell has a piece that is not his
-        # otherwise return None meanning invalid move
+        # otherwise return None meaning invalid move
         source_cell = board.get_cell(*result.source)
         dest_cell = board.get_cell(*result.dest)
         if not source_cell.piece.is_my_piece(self.color):
@@ -133,8 +129,7 @@ class AbstractPiece(AbstractDrawable):
         self.available_spots_cache: dict[list] = {}
 
     def copy(self):
-        piece_copy =  self.__class__(
-            self.image.copy(), self.player, self.coordinate)
+        piece_copy = self.__class__(self.image.copy(), self.player, self.coordinate)
         piece_copy.id = self.id
         piece_copy.rect = self.rect.copy()
         piece_copy.available_spots_cache = self.available_spots_cache.copy()

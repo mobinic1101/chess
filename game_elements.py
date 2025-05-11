@@ -1,4 +1,3 @@
-from itertools import cycle
 from typing import SupportsIndex
 import logging
 import pygame
@@ -79,7 +78,7 @@ class Cell(AbstractDrawable):
 
 
 class Board(AbstractDrawable):
-    CELL_COUNT = 8  # each chess board has 8 cells vertically and horizantally
+    CELL_COUNT = 8  # each chess board has 8 cells vertically and horizontally
 
     def __init__(self, image):
         super().__init__(image)
@@ -117,7 +116,7 @@ class Board(AbstractDrawable):
         """
         return a copy of the board's current state;
         **not an exact copy** because the player attribute of pieces inside cells is
-        a reference the the current objects player, meanning if you change anything in player,
+        a reference the the current objects player, meaning if you change anything in player,
         its gonna change in the copied object too.
 
         but if you wanna get an exact copy you can modify the abstracts.AbstractPiece.copy() method
@@ -199,7 +198,11 @@ class Board(AbstractDrawable):
 
 class Pawn(AbstractPiece):
     def calculate_moves(
-        self, board: Board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
+        self,
+        board: Board,
+        color: str,
+        coordinate: tuple[int, int] | None = None,
+        **kwargs,
     ):
         """
         Args:
@@ -213,7 +216,7 @@ class Pawn(AbstractPiece):
         available_spots = []
         UP = -1
         DOWN = +1
-        
+
         # the direction can also be used for horizontal movements
         if not opponent:
             direction = UP if self.is_my_piece(color) else DOWN
@@ -221,7 +224,7 @@ class Pawn(AbstractPiece):
             direction = DOWN if self.is_my_piece(color) else UP
 
         # normal moves (either up or down)
-        if (board.CELL_COUNT > piece_i + direction >= 0):
+        if board.CELL_COUNT > piece_i + direction >= 0:
             if board.get_cell(piece_i + direction, piece_j).piece is None:
                 available_spots.append((piece_i + direction, piece_j))
                 # Double move
@@ -230,10 +233,11 @@ class Pawn(AbstractPiece):
                 ) and (piece_i == 6):
                     available_spots.append((piece_i + 2 * direction, piece_j))
                 elif (
-                    (not opponent and direction == DOWN) or (opponent and direction == DOWN)
+                    (not opponent and direction == DOWN)
+                    or (opponent and direction == DOWN)
                 ) and (piece_i == 1):
                     available_spots.append((piece_i + 2 * direction, piece_j))
-            
+
             # diagonal moves (either downside or upside)
             if board.CELL_COUNT > piece_j + 1 >= 0:
                 cell = board.get_cell(piece_i + direction, piece_j + 1)
@@ -255,22 +259,26 @@ class Pawn(AbstractPiece):
 
 class Rook(AbstractPiece):
     def calculate_moves(
-        self, board: Board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
+        self,
+        board: Board,
+        color: str,
+        coordinate: tuple[int, int] | None = None,
+        **kwargs,
     ):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
 
-        for j in range(piece_j + 1, board.CELL_COUNT): # right
+        for j in range(piece_j + 1, board.CELL_COUNT):  # right
             # print(f"going right: {piece_i, j}")
-            cell = board.get_cell(piece_i , j)
+            cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
                     available_spots.append((piece_i, j))
                 break
             available_spots.append((piece_i, j))
 
-        for j in range(piece_j - 1, -1, -1): # left
+        for j in range(piece_j - 1, -1, -1):  # left
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
@@ -278,8 +286,8 @@ class Rook(AbstractPiece):
                     available_spots.append((piece_i, j))
                 break
             available_spots.append((piece_i, j))
-            
-        for i in range(piece_i + 1, board.CELL_COUNT): # down
+
+        for i in range(piece_i + 1, board.CELL_COUNT):  # down
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
@@ -288,7 +296,7 @@ class Rook(AbstractPiece):
                 break
             available_spots.append((i, piece_j))
 
-        for i in range(piece_i - 1, -1, -1): # up
+        for i in range(piece_i - 1, -1, -1):  # up
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
@@ -325,7 +333,7 @@ class Knight(AbstractPiece):
                 cell2 = board.get_cell(piece_i + i, piece_j - j)
                 if (cell.piece is None) or cell.piece.color != color:
                     available_spots.append((piece_i + i, piece_j + j))
-                if (cell2.piece is None) or cell2.piece.color!=color:
+                if (cell2.piece is None) or cell2.piece.color != color:
                     available_spots.append((piece_i + i, piece_j - j))
         for i in [-1, 1]:
             for j in [-2, 2]:
@@ -397,24 +405,24 @@ class Queen(AbstractPiece):
     def calculate_moves(
         self,
         board: Board,
-        color:str,
+        color: str,
         coordinate: tuple[int, int] | None = None,
         **kwargs,
     ):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        
-        for j in range(piece_j + 1, board.CELL_COUNT): # right
+
+        for j in range(piece_j + 1, board.CELL_COUNT):  # right
             # print(f"going right: {piece_i, j}")
-            cell = board.get_cell(piece_i , j)
+            cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
                     available_spots.append((piece_i, j))
                 break
             available_spots.append((piece_i, j))
 
-        for j in range(piece_j - 1, -1, -1): # left
+        for j in range(piece_j - 1, -1, -1):  # left
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
@@ -422,8 +430,8 @@ class Queen(AbstractPiece):
                     available_spots.append((piece_i, j))
                 break
             available_spots.append((piece_i, j))
-            
-        for i in range(piece_i + 1, board.CELL_COUNT): # down
+
+        for i in range(piece_i + 1, board.CELL_COUNT):  # down
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
@@ -432,7 +440,7 @@ class Queen(AbstractPiece):
                 break
             available_spots.append((i, piece_j))
 
-        for i in range(piece_i - 1, -1, -1): # up
+        for i in range(piece_i - 1, -1, -1):  # up
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
@@ -478,7 +486,7 @@ class King(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        
+
         UP = (piece_i - 1, piece_j)
         DOWN = (piece_i + 1, piece_j)
         LEFT = (piece_i, piece_j - 1)
@@ -580,14 +588,18 @@ if __name__ == "__main__":
     board = Board(image)
     board[7][7].set_piece(
         Rook(
-            pack.get_texture(settings.TEXTURE_NAMES["b_rook"], size=settings.PIECE_WIDTH_HIGHT),
+            pack.get_texture(
+                settings.TEXTURE_NAMES["b_rook"], size=settings.PIECE_WIDTH_HIGHT
+            ),
             player2,
             (7, 7),
         ).set_coordinate((7, 7))
     )
     board[0][0].set_piece(
         Rook(
-            pack.get_texture(settings.TEXTURE_NAMES["w_rook"], size=settings.PIECE_WIDTH_HIGHT),
+            pack.get_texture(
+                settings.TEXTURE_NAMES["w_rook"], size=settings.PIECE_WIDTH_HIGHT
+            ),
             player1,
             (0, 0),
         ).set_coordinate((0, 0))
