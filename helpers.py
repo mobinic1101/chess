@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from datetime import datetime, timedelta
 import pygame
 
 if TYPE_CHECKING:
@@ -39,6 +40,35 @@ def invert_coordinate(coordinate: tuple[int, int], board: "Board") -> tuple[int,
     return (x, y)
 
 
+def check_time_passed(seconds: int):
+    """a generator that takes an integer n as input and yield True if
+    n seconds passed since we first initialized it, each time we call next() on it. otherwise false
+    **it doesn't raise any StopIteration so you need to close the generator manually using .close() method**
+
+    Args:
+        seconds (int): seconds to pass for the generator to yield True.
+    Returns:
+        True: if the specified time passed since the first time generator initialized
+        False: otherwise.
+    """
+    seconds_to_pass = timedelta(seconds=seconds)
+    time_before = datetime.now()
+    while True:
+        current_time = datetime.now()
+        if (current_time - time_before) > seconds_to_pass:
+            yield True
+        yield False
+
+
 if __name__ == "__main__":
-        from game_elements import Board
-        print(invert_coordinate((3, -1), Board))
+    # from game_elements import Board
+
+    # print(invert_coordinate((3, -1), Board))
+    secs = 10
+    time_elapsed = check_time_passed(secs)
+
+    while True:
+        if next(time_elapsed):
+            print(f"{secs} secs elapsed")
+            time_elapsed.close()
+            break

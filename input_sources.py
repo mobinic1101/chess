@@ -3,6 +3,8 @@ import random
 import datatypes
 from abstracts import AbstractInputSource
 from game_elements import Board
+import helpers
+
 # from helpers import invert_coordinate
 
 
@@ -46,6 +48,10 @@ class Human(AbstractInputSource):
 
 
 class Bot(AbstractInputSource):
+    def __init__(self):
+        super().__init__()
+        self.time_elapsed = None
+
     # def get_board_copy(self, board: Board) -> Board:
     #     """
     #     Creates a copy of the board and returns it.
@@ -57,16 +63,25 @@ class Bot(AbstractInputSource):
         self, color: str, board: Board, events: list[pygame.event.Event] = None
     ) -> datatypes.Move | None:
         # the Bot does not use events, so we can safely ignore them
-        # board = board.rotate_180()
+        if self.time_elapsed is None:
+            self.time_elapsed = helpers.check_time_passed(1)
+            return None
+        if not next(self.time_elapsed):
+            return None
         cells = [cell for cell in board.get_filled_cells() if cell.piece.color == color]
         possible_destinations = []
         while 1:
             source = random.choice(cells)
-            available_spots = source.piece.find_available_spots(board, color=color, opponent=True)
+            available_spots = source.piece.find_available_spots(
+                board, color=color, opponent=True
+            )
             if available_spots:
                 possible_destinations = available_spots
                 break
 
         # choose a random destination
         dest = random.choice(possible_destinations)
+
+        # reset self.time_elapsed
+        self.time_elapsed = None
         return datatypes.Move(source=source.coordinate, dest=dest)
