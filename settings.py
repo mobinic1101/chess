@@ -16,6 +16,7 @@ CAPTION = "MasterChess"
 TEXTURE_DIR = BASE_DIR / "textures/"
 DEFAULT_TEXTURE_PACK = "pack1"
 AVAILABLE_SPOTS_COLOR = "yellow"
+LAST_MOVE_CELL_COLOR = "darkgreen"
 
 BOARD_WIDTH_HIGHT = (HIGHT, HIGHT)
 # divide BOARD_WIDTH_HIGHT by 8 because a board in a chess game has 8 cells

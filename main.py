@@ -7,7 +7,7 @@ import player
 import input_sources
 from motion import Motion
 from texture_loader import TexturePackLoader
-from helpers import SimpleSprite
+from helpers import SimpleSprite, create_simple_square_sprite
 from datatypes import Move
 
 pygame.init()
@@ -46,7 +46,7 @@ class Game:
             return self.player2
         else:
             return self.player1
-        
+
     def add_move(self, move: Move):
         self.moves.append(move)
 
@@ -82,6 +82,7 @@ class Game:
     def main_loop(self):
         self.is_game_running = True
         available_cells = []
+        previous_move_source_cell = None  # the last cell a piece moved from.
         logging.info("entering main loop...")
         while self.is_game_running:
             self.clock.tick(settings.FPS)
@@ -101,10 +102,12 @@ class Game:
                         )
                         for spot in available_spots:
                             cell = self.board.get_cell(*spot)
-                            surface = pygame.surface.Surface((cell.width, cell.hight))
-                            surface.fill(settings.AVAILABLE_SPOTS_COLOR)
-                            sprite = SimpleSprite(surface)
-                            sprite.rect = cell.rect.copy()
+                            sprite = create_simple_square_sprite(
+                                cell.width,
+                                cell.hight,
+                                settings.AVAILABLE_SPOTS_COLOR,
+                                cell.rect.copy(),
+                            )
                             available_cells.append(sprite)
 
             # handling players input
@@ -114,9 +117,17 @@ class Game:
                 )
                 dest_cell: game_elements.Cell = self.board.get_cell(*player_input.dest)
 
+                previous_move_source_cell = create_simple_square_sprite(
+                    source_cell.width,
+                    source_cell.hight,
+                    settings.LAST_MOVE_CELL_COLOR,
+                    source_cell.rect.copy(),
+                )
+                available_cells.clear()
+
                 # handle eating pieces
                 if dest_cell.piece:
-                    self.current_player.eaten_pieces.append(dest_cell.piece)
+                    self.current_player.eaten_pieces.append(source_cell.piece)
 
                 # moving pieces
                 dest_cell.set_piece(source_cell.piece)
@@ -127,9 +138,7 @@ class Game:
                 )
 
                 # recording moves
-                self.add_move(
-                    Move(source=player_input.source, dest=player_input.dest)
-                )
+                self.add_move(Move(source=player_input.source, dest=player_input.dest))
                 self.switch_players()
 
             # applying animations
@@ -139,8 +148,13 @@ class Game:
             pieces: list[abstracts.AbstractPiece] = [
                 cell.piece for cell in self.board.get_filled_cells()
             ]
+
+            items_to_draw = [self.board, *available_cells, *pieces]
+            if previous_move_source_cell is not None:
+                items_to_draw.append(previous_move_source_cell)
+
             self.screen.fill("white")
-            self.draw_items(self.screen, self.board, *available_cells, *pieces)
+            self.draw_items(self.screen, *items_to_draw)
 
 
 if __name__ == "__main__":

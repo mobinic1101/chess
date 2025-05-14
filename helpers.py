@@ -60,6 +60,23 @@ def check_time_passed(seconds: int):
         yield False
 
 
+def create_simple_square_sprite(width: int, height: int, color: str, rect: pygame.Rect):
+    """create a simple square shaped sprite that you can draw on a surface.
+
+    Args:
+        width (int): width of the square
+        height (int): height if the square
+        color (str): color of it
+        rect (Rect): where you want the rect to get drew? pass a rect object here representing it
+    """    
+    surface = pygame.surface.Surface((width, height))
+    surface.fill(color)
+    sprite = SimpleSprite(surface)
+    sprite.rect = rect
+    return sprite
+
+
+
 if __name__ == "__main__":
     # from game_elements import Board
 
