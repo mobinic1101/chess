@@ -77,11 +77,7 @@ class AbstractPlayer(ABC):
         self.color = color
         self.name = name
         self.input_source = input_source
-        self.moves = []
-        self.eated_pieces: list["datatypes.Piece"] = []
-
-    def add_move(self, move: "datatypes.Move"):
-        self.moves.append(move)
+        self.eaten_pieces: list["datatypes.Piece"] = []
 
     def get_input(
         self, board, events: list[pygame.event.Event]

@@ -27,12 +27,13 @@ class Game:
         self.screen = pygame.display.set_mode((settings.WIDTH, settings.HIGHT))
         self.clock = pygame.time.Clock()
         self.motion = Motion(settings.MOVEMENT_SPEED)
-        self.is_running = False
+        self.moves = []
+        self.is_game_running = False
 
     def _handle_closing_event(self, events: list[pygame.event.Event]):
         for event in events:
             if event.type == pygame.QUIT:
-                self.is_running = False
+                self.is_game_running = False
 
     def switch_players(self):
         if self.current_player.color == self.player1.color:
@@ -45,6 +46,9 @@ class Game:
             return self.player2
         else:
             return self.player1
+        
+    def add_move(self, move: Move):
+        self.moves.append(move)
 
     def get_clicked_pos(self, events: list[pygame.event.Event]):
         """
@@ -76,10 +80,10 @@ class Game:
         pygame.display.update()
 
     def main_loop(self):
-        self.is_running = True
+        self.is_game_running = True
         available_cells = []
         logging.info("entering main loop...")
-        while self.is_running:
+        while self.is_game_running:
             self.clock.tick(settings.FPS)
             # handling events
             events = pygame.event.get()
@@ -104,32 +108,28 @@ class Game:
                             available_cells.append(sprite)
 
             # handling players input
-            if player_input := self.current_player.get_input(
-                self.board, events
-            ):
+            if player_input := self.current_player.get_input(self.board, events):
                 source_cell: game_elements.Cell = self.board.get_cell(
                     *player_input.source
                 )
-                dest_cell: game_elements.Cell = self.board.get_cell(
-                    *player_input.dest
-                )
+                dest_cell: game_elements.Cell = self.board.get_cell(*player_input.dest)
 
                 # handle eating pieces
                 if dest_cell.piece:
-                    self.current_player.eated_pieces.append(dest_cell.piece)
+                    self.current_player.eaten_pieces.append(dest_cell.piece)
 
                 # moving pieces
                 dest_cell.set_piece(source_cell.piece)
                 source_cell.rem_piece()
 
-                self.motion.add_operation(dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y))
-
-                # adding to player's move
-                self.current_player.add_move(
-                    Move(source=player_input.source, dest=player_input.dest)
+                self.motion.add_operation(
+                    dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y)
                 )
 
-                # switching player
+                # recording moves
+                self.add_move(
+                    Move(source=player_input.source, dest=player_input.dest)
+                )
                 self.switch_players()
 
             # applying animations
@@ -141,7 +141,6 @@ class Game:
             ]
             self.screen.fill("white")
             self.draw_items(self.screen, self.board, *available_cells, *pieces)
-                
 
 
 if __name__ == "__main__":
