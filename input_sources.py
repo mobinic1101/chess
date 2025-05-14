@@ -10,7 +10,7 @@ import helpers
 
 class Human(AbstractInputSource):
     def __init__(self):
-        # Stores the source and destination coordinates of a move
+        # stores the source and destination coordinates of a move
         self.inputs: list[tuple[int, int]] = []
 
     def get_input(
@@ -20,12 +20,10 @@ class Human(AbstractInputSource):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
 
-                # check if the clicked pos is in the area of the board because if it's not
-                # the get_cell_by_coordinates will return None
+                # validating clicked position
                 cell_coordinates = board.get_cell_by_coordinates(mouse_pos)
                 if not cell_coordinates:
                     break
-                # Ensure the first click is on a piece; ignore if the cell is empty
                 elif (len(self.inputs) == 0) and board.get_cell(
                     *cell_coordinates
                 ).piece is None:
@@ -62,7 +60,7 @@ class Bot(AbstractInputSource):
     def get_input(
         self, color: str, board: Board, events: list[pygame.event.Event] = None
     ) -> datatypes.Move | None:
-        # the Bot does not use events, so we can safely ignore them
+        # we are not using `events` parameter here.
         if self.time_elapsed is None:
             self.time_elapsed = helpers.check_time_passed(1)
             return None
@@ -79,7 +77,6 @@ class Bot(AbstractInputSource):
                 possible_destinations = available_spots
                 break
 
-        # choose a random destination
         dest = random.choice(possible_destinations)
 
         # reset self.time_elapsed

@@ -11,7 +11,6 @@ class TexturePack:
             Path(texture_dir) if isinstance(texture_dir, str) else texture_dir
         ).absolute()
 
-        # validating texture dir to be a directory
         if not texture_dir.is_dir():
             raise NotADirectoryError(
                 f"{inspect.getfullargspec(TexturePack.__init__).args[1]} expected to be a directory, given: {texture_dir}"
@@ -21,14 +20,13 @@ class TexturePack:
         self.name = name if name is not None else texture_dir.name
         self.all_textures_paths = self._get_all_textures_paths()
 
-        # check for messing textures
         logging.info("checking for messing textures...")
         messing_textures = self.find_messing_textures()
         if messing_textures:
             raise FileNotFoundError(
                 f"messing texture for pack [{self.name}] [{', '.join(messing_textures)}]"
             )
-        
+
         logging.info("loading all textures...")
         self.all_textures: dict[str, pygame.Surface] = self.load_all()
 
@@ -47,7 +45,7 @@ class TexturePack:
                 continue
             all_textures[texture.name] = texture
         return all_textures
-    
+
     def get_texture_path(self, name: str) -> Path:
         """get texture path by its name (filename)
         Example .get_texture("board.png")
@@ -66,7 +64,9 @@ class TexturePack:
             all_textures[texture_name] = pygame.image.load(texture_path)
         return all_textures
 
-    def get_texture(self, name: str, size: tuple[int, int] | None = None) -> pygame.Surface:
+    def get_texture(
+        self, name: str, size: tuple[int, int] | None = None
+    ) -> pygame.Surface:
         """get texture by its name (filename)
         Example .get_texture("board.png", (500, 500))
 
@@ -76,14 +76,14 @@ class TexturePack:
 
         Returns:
             pygame.Surface: texture/image (instance of pygame.Surface)
-        """        
+        """
         texture = self.all_textures[name]
         if size is not None:
             texture = pygame.transform.scale(texture, size)
         return texture
-    
+
     def __repr__(self):
-        return f"TexturePack(name={self.name}, texture_dir={self.texture_dir})"   
+        return f"TexturePack(name={self.name}, texture_dir={self.texture_dir})"
 
 
 class TexturePackLoader:
@@ -122,7 +122,7 @@ class TexturePackLoader:
             elif pack.name == settings.DEFAULT_TEXTURE_PACK:
                 default_pack = pack
         return default_pack
-        
+
     def __repr__(self):
         return f"TexturePackLoader(texture_dir={self.texture_dir}, all_packs={self.all_packs})"
 

@@ -7,7 +7,7 @@ import player
 import input_sources
 from motion import Motion
 from texture_loader import TexturePackLoader
-from helpers import SimpleSprite, create_simple_square_sprite
+from helpers import create_simple_square_sprite
 from datatypes import Move
 
 pygame.init()
@@ -86,7 +86,7 @@ class Game:
         logging.info("entering main loop...")
         while self.is_game_running:
             self.clock.tick(settings.FPS)
-            # handling events
+
             events = pygame.event.get()
             self._handle_closing_event(events)
             # handling simple clicks
@@ -125,7 +125,6 @@ class Game:
                 )
                 available_cells.clear()
 
-                # handle eating pieces
                 if dest_cell.piece:
                     self.current_player.eaten_pieces.append(source_cell.piece)
 
@@ -137,7 +136,6 @@ class Game:
                     dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y)
                 )
 
-                # recording moves
                 self.add_move(Move(source=player_input.source, dest=player_input.dest))
                 self.switch_players()
 

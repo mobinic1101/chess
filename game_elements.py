@@ -47,7 +47,6 @@ class Cell(AbstractDrawable):
         self.coordinate = coordinate
         self.rect.x = coordinate[0] * self.width
         self.rect.y = coordinate[1] * self.hight
-        # modifying self.piece
         if self.piece is not None:
             self.piece.coordinate = coordinate
             self.piece.rect.x = self.rect.x
@@ -83,15 +82,12 @@ class Board(AbstractDrawable):
     def __init__(self, image):
         super().__init__(image)
         logging.info("initializing board...")
-        # board is a 2D list
         self.board: list[list[Cell]] = self._init_board()
 
     def _init_board(self) -> list[list[Cell]]:
         """creates and initializes Cell objects, sets their width, hight, x and y
         based on self.image, and fill self.board with them.
         """
-        # divide board width and hight to 8 equal cells,
-        # set the cell width and hight based on the result of division.
         cell_width = cell_hight = self.image.get_width() // self.CELL_COUNT
         board = []
         for i in range(self.CELL_COUNT):
@@ -365,7 +361,8 @@ class Bishop(AbstractPiece):
         piece_i = coordinate[0]
         piece_j = coordinate[1]
         available_spots = []
-        # example usage: in the loop below when we iterate through directions and encounter a filled cell
+        # example usage for `completed_directions` variable:
+        # in the loop below when we iterate through directions and encounter a filled cell
         # we can add the cell to available_spots and add that direction to this set this helps us to
         # prevent going through the same direction again
         completed_directions = set()
@@ -606,7 +603,6 @@ if __name__ == "__main__":
     )
     RUN = True
     while RUN:
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 RUN = False
