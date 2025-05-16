@@ -1,5 +1,4 @@
 import logging
-from annotated_types import IsInfinite
 import pygame
 import abstracts
 import game_elements
