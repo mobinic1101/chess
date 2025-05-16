@@ -3,6 +3,7 @@ import logging
 import pygame
 from abstracts import AbstractDrawable, AbstractPiece, AbstractPlayer
 from texture_loader import TexturePack
+from datatypes import AvailableSpot
 import settings
 
 # from helpers import invert_coordinate
@@ -193,6 +194,14 @@ class Board(AbstractDrawable):
 
 
 class Pawn(AbstractPiece):
+    def __init__(self, image, player, coordinate):
+        super().__init__(image, player, coordinate)
+        self.moves_count = 0
+
+    @property
+    def can_captured_by_en_passant(self):
+        return self.moves_count == 1
+
     def calculate_moves(
         self,
         board: Board,
@@ -215,41 +224,82 @@ class Pawn(AbstractPiece):
 
         # the direction can also be used for horizontal movements
         if not opponent:
-            direction = UP if self.is_my_piece(color) else DOWN
+            vertical_direction = UP if self.is_my_piece(color) else DOWN
         else:
-            direction = DOWN if self.is_my_piece(color) else UP
+            vertical_direction = DOWN if self.is_my_piece(color) else UP
 
         # normal moves (either up or down)
-        if board.CELL_COUNT > piece_i + direction >= 0:
-            if board.get_cell(piece_i + direction, piece_j).piece is None:
-                available_spots.append((piece_i + direction, piece_j))
+        if board.CELL_COUNT > piece_i + vertical_direction >= 0:
+            if board.get_cell(piece_i + vertical_direction, piece_j).piece is None:
+                available_spots.append(
+                    AvailableSpot((piece_i + vertical_direction, piece_j))
+                )
                 # Double move
                 if (
-                    (not opponent and direction == UP) or (opponent and direction == UP)
+                    (not opponent and vertical_direction == UP)
+                    or (opponent and vertical_direction == UP)
                 ) and (piece_i == 6):
-                    available_spots.append((piece_i + 2 * direction, piece_j))
+                    available_spots.append(
+                        AvailableSpot((piece_i + 2 * vertical_direction, piece_j))
+                    )
                 elif (
-                    (not opponent and direction == DOWN)
-                    or (opponent and direction == DOWN)
+                    (not opponent and vertical_direction == DOWN)
+                    or (opponent and vertical_direction == DOWN)
                 ) and (piece_i == 1):
-                    available_spots.append((piece_i + 2 * direction, piece_j))
+                    available_spots.append(
+                        AvailableSpot((piece_i + 2 * vertical_direction, piece_j))
+                    )
 
-            # diagonal moves (either downside or upside)
-            if board.CELL_COUNT > piece_j + 1 >= 0:
-                cell = board.get_cell(piece_i + direction, piece_j + 1)
+            horizontal_directions = [+1, -1]
+            for horizontal_direction in horizontal_directions:
+                # diagonal moves (either downside or upside)
+                if not board.CELL_COUNT > piece_j + horizontal_direction >= 0:
+                    continue
+                cell = board.get_cell(
+                    piece_i + vertical_direction, piece_j + horizontal_direction
+                )
                 if cell.piece is not None and cell.piece.color != color:
-                    available_spots.append((piece_i + direction, piece_j + 1))
-            if board.CELL_COUNT > piece_j - 1 >= 0:
-                cell = board.get_cell(piece_i + direction, piece_j - 1)
-                if cell.piece is not None and cell.piece.color != color:
-                    available_spots.append((piece_i + direction, piece_j - 1))
+                    available_spots.append(
+                        AvailableSpot(
+                            (
+                                piece_i + vertical_direction,
+                                piece_j + horizontal_direction,
+                            )
+                        )
+                    )
 
-        # filter out-of-bound/invalid spots:
-        available_spots = [
-            spot
-            for spot in available_spots
-            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
-        ]
+                # en passant
+                print("while handling en-passant...")
+                print(f"piece_i: {piece_i}, piece_j: {piece_j}")
+                if piece_i == 3 or piece_i == 4:
+                    side_cell = board.get_cell(piece_i, piece_j + horizontal_direction)
+                    dest_coordinate = (
+                        piece_i + vertical_direction,
+                        piece_j + horizontal_direction,
+                    )
+                    dest_cell = board.get_cell(*dest_coordinate)
+                    print(f"side_cell.piece: {side_cell.piece}")
+                    if not dest_cell.is_empty():
+                        continue
+                    if side_cell.is_empty():
+                        continue
+                    if not isinstance(side_cell.piece, Pawn):
+                        continue
+                    print(
+                        f"can piece can_captured_by_en_passant?: {side_cell.piece.can_captured_by_en_passant}"
+                    )
+                    if not side_cell.piece.can_captured_by_en_passant:
+                        continue
+                    if side_cell.piece.color == color:
+                        continue
+                    available_spots.append(
+                        AvailableSpot(
+                            dest_coordinate,
+                            is_en_passant=True,
+                            en_passant_target_cell=side_cell,
+                        )
+                    )
+
         return available_spots
 
 
@@ -270,36 +320,36 @@ class Rook(AbstractPiece):
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((piece_i, j))
+                    available_spots.append(AvailableSpot((piece_i, j)))
                 break
-            available_spots.append((piece_i, j))
+            available_spots.append(AvailableSpot((piece_i, j)))
 
         for j in range(piece_j - 1, -1, -1):  # left
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((piece_i, j))
+                    available_spots.append(AvailableSpot((piece_i, j)))
                 break
-            available_spots.append((piece_i, j))
+            available_spots.append(AvailableSpot((piece_i, j)))
 
         for i in range(piece_i + 1, board.CELL_COUNT):  # down
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((i, piece_j))
+                    available_spots.append(AvailableSpot((i, piece_j)))
                 break
-            available_spots.append((i, piece_j))
+            available_spots.append(AvailableSpot((i, piece_j)))
 
         for i in range(piece_i - 1, -1, -1):  # up
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((i, piece_j))
+                    available_spots.append(AvailableSpot((i, piece_j)))
                 break
-            available_spots.append((i, piece_j))
+            available_spots.append(AvailableSpot((i, piece_j)))
 
         return available_spots
 
@@ -328,9 +378,9 @@ class Knight(AbstractPiece):
                 cell = board.get_cell(piece_i + i, piece_j + j)
                 cell2 = board.get_cell(piece_i + i, piece_j - j)
                 if (cell.piece is None) or cell.piece.color != color:
-                    available_spots.append((piece_i + i, piece_j + j))
+                    available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
                 if (cell2.piece is None) or cell2.piece.color != color:
-                    available_spots.append((piece_i + i, piece_j - j))
+                    available_spots.append(AvailableSpot((piece_i + i, piece_j - j)))
         for i in [-1, 1]:
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
@@ -343,9 +393,9 @@ class Knight(AbstractPiece):
                 cell = board.get_cell(piece_i + i, piece_j + j)
                 cell2 = board.get_cell(piece_i - i, piece_j + j)
                 if (cell.piece is None) or cell.piece.color != color:
-                    available_spots.append((piece_i + i, piece_j + j))
+                    available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
                 if (cell2.piece is None) or cell2.piece.color != color:
-                    available_spots.append((piece_i - i, piece_j + j))
+                    available_spots.append(AvailableSpot((piece_i - i, piece_j + j)))
 
         return available_spots
 
@@ -383,17 +433,10 @@ class Bishop(AbstractPiece):
                 cell = board.get_cell(*direction)
                 if cell.piece is not None:
                     if cell.piece.color != color:
-                        available_spots.append(direction)
+                        available_spots.append(AvailableSpot(direction))
                     completed_directions.add(i)
                     continue
-                available_spots.append(direction)
-
-        # filter out of bound spots:
-        available_spots = [
-            spot
-            for spot in available_spots
-            if (0 <= spot[0] < board.CELL_COUNT) and (0 <= spot[1] < board.CELL_COUNT)
-        ]
+                available_spots.append(AvailableSpot(direction))
 
         return available_spots
 
@@ -415,36 +458,36 @@ class Queen(AbstractPiece):
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((piece_i, j))
+                    available_spots.append(AvailableSpot((piece_i, j)))
                 break
-            available_spots.append((piece_i, j))
+            available_spots.append(AvailableSpot((piece_i, j)))
 
         for j in range(piece_j - 1, -1, -1):  # left
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((piece_i, j))
+                    available_spots.append(AvailableSpot((piece_i, j)))
                 break
-            available_spots.append((piece_i, j))
+            available_spots.append(AvailableSpot((piece_i, j)))
 
         for i in range(piece_i + 1, board.CELL_COUNT):  # down
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((i, piece_j))
+                    available_spots.append(AvailableSpot((i, piece_j)))
                 break
-            available_spots.append((i, piece_j))
+            available_spots.append(AvailableSpot((i, piece_j)))
 
         for i in range(piece_i - 1, -1, -1):  # up
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append((i, piece_j))
+                    available_spots.append(AvailableSpot((i, piece_j)))
                 break
-            available_spots.append((i, piece_j))
+            available_spots.append(AvailableSpot((i, piece_j)))
 
         # diagonal moves
         completed_directions = set()
@@ -465,10 +508,10 @@ class Queen(AbstractPiece):
                 cell = board.get_cell(*direction)
                 if cell.piece is not None:
                     if cell.piece.color != color:
-                        available_spots.append(direction)
+                        available_spots.append(AvailableSpot(direction))
                     completed_directions.add(i)
                     continue
-                available_spots.append(direction)
+                available_spots.append(AvailableSpot(direction))
         return available_spots
 
 
@@ -501,9 +544,9 @@ class King(AbstractPiece):
             cell = board.get_cell(*direction)
             if cell.piece is not None:
                 if cell.piece.color != color:
-                    available_spots.append(direction)
+                    available_spots.append(AvailableSpot(direction))
                 continue
-            available_spots.append(direction)
+            available_spots.append(AvailableSpot(direction))
 
         return available_spots
 
@@ -564,6 +607,7 @@ if __name__ == "__main__":
     from texture_loader import TexturePackLoader
     from player import Player
     from input_sources import Human
+    from helpers import create_simple_square_sprite
 
     texturepackloader = TexturePackLoader(settings.TEXTURE_DIR)
     pack = texturepackloader.get_pack(settings.DEFAULT_TEXTURE_PACK)
@@ -583,31 +627,34 @@ if __name__ == "__main__":
         input_source=Human(),
     )
     board = Board(image)
-    board[7][7].set_piece(
-        Rook(
+    board[3][1].set_piece(
+        Pawn(
             pack.get_texture(
-                settings.TEXTURE_NAMES["b_rook"], size=settings.PIECE_WIDTH_HIGHT
+                settings.TEXTURE_NAMES["b_pawn"], size=settings.PIECE_WIDTH_HIGHT
             ),
             player2,
-            (7, 7),
-        ).set_coordinate((7, 7))
+            (3, 1),
+        )
     )
-    board[0][0].set_piece(
-        Rook(
-            pack.get_texture(
-                settings.TEXTURE_NAMES["w_rook"], size=settings.PIECE_WIDTH_HIGHT
-            ),
-            player1,
-            (0, 0),
-        ).set_coordinate((0, 0))
+    pawn = Pawn(
+        pack.get_texture(
+            settings.TEXTURE_NAMES["w_pawn"], size=settings.PIECE_WIDTH_HIGHT
+        ),
+        player1,
+        (3, 0),
     )
+    board[3][0].set_piece(pawn)
     RUN = True
+    available_cells_to_draw = []
     while RUN:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 RUN = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if available_cells_to_draw:
+                    available_cells_to_draw.clear()
+                    break
                 mouse_pos = pygame.mouse.get_pos()
                 rowcol = board.get_cell_by_coordinates(mouse_pos)
                 if rowcol:
@@ -615,14 +662,22 @@ if __name__ == "__main__":
                     cell = board[i][j]
                     if cell.piece:
                         print(cell.piece)
+                        available_spots = cell.piece.find_available_spots(
+                            board, color=cell.piece.color
+                        )
+                        print(f"Available spots for {cell.piece}: {available_spots}")
+                        for spot in available_spots:
+                            cell = board.get_cell(*spot.coordinate)
+                            surface = create_simple_square_sprite(
+                                cell.width, cell.hight, "black", cell.rect
+                            )
+                            available_cells_to_draw.append(surface)
                     else:
                         print("empty cell")
-                    available_spots = cell.piece.find_available_spots(
-                        board, color=cell.piece.color
-                    )
-                    print(f"Available spots for {cell.piece}: {available_spots}")
 
         screen.blit(board.image, board.rect)
         for cell in board.get_filled_cells():
             screen.blit(cell.piece.image, cell.piece.rect)
+        for cell in available_cells_to_draw:
+            screen.blit(cell.image, cell.rect)
         pygame.display.update()

@@ -33,14 +33,19 @@ class Human(AbstractInputSource):
                 if len(self.inputs) == 2:
                     inputs = self.inputs.copy()
                     self.inputs.clear()
-                    inputs = datatypes.Move(source=inputs[0], dest=inputs[1])
                     # validate destination pos
-                    source_cell = board.get_cell(*inputs.source)
-                    available_spots = source_cell.piece.find_available_spots(
+                    dest_spot = None
+                    source_cell = board.get_cell(*inputs[0])
+                    for spot in source_cell.piece.find_available_spots(
                         board, color=color
-                    )
-                    if inputs.dest not in available_spots:
+                    ):
+                        coordinate = spot.coordinate
+                        if inputs[1] == coordinate:
+                            dest_spot = spot
+                    if dest_spot is None:
                         break
+
+                    inputs = datatypes.Move(source=inputs[0], dest=dest_spot)
                     return inputs
         return None
 

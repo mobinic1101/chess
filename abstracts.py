@@ -100,7 +100,7 @@ class AbstractPlayer(ABC):
         # the dest cell is empty or the dest cell has a piece that is not his
         # otherwise return None meaning invalid move
         source_cell = board.get_cell(*result.source)
-        dest_cell = board.get_cell(*result.dest)
+        dest_cell = board.get_cell(*result.dest.coordinate)
         if not source_cell.piece.is_my_piece(self.color):
             return None
         if dest_cell.piece:
@@ -121,8 +121,8 @@ class AbstractPiece(AbstractDrawable):
         super().__init__(image)
         self.player = player
         self.color = player.color
-        self.coordinate = coordinate
-        self.available_spots_cache: dict[list] = {}
+        self.set_coordinate(coordinate)
+        # self.available_spots_cache: dict[list] = {}
 
     def copy(self):
         piece_copy = self.__class__(self.image.copy(), self.player, self.coordinate)
@@ -170,15 +170,27 @@ class AbstractPiece(AbstractDrawable):
     #         return None
     #     return available_spots
 
+    def filter_out_of_bound_spots(
+        self, available_spots: "list[datatypes.AvailableSpot]"
+    ) -> "list[datatypes.AvailableSpot]":
+        """
+        filters out-of-bound spots from the available spots.
+        """
+        return [
+            spot
+            for spot in available_spots
+            if 0 <= spot.coordinate[0] < 8 and 0 <= spot.coordinate[1] < 8
+        ]
+
     @abstractmethod
     def calculate_moves(
         self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
-    ) -> list[tuple[int, int]]:
+    ) -> "list[datatypes.AvailableSpot]":
         pass
 
     def find_available_spots(
         self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
-    ) -> list[tuple[int, int]]:
+    ) -> "list[datatypes.AvailableSpot]":
         """
         Finds available spots a Piece can move to.
 
@@ -198,9 +210,10 @@ class AbstractPiece(AbstractDrawable):
         #     return available_spots
 
         available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
+        available_spots = self.filter_out_of_bound_spots(available_spots)
         # # cache the result
         # self.available_spots_cache[coordinate] = available_spots
         return available_spots
 
     def __str__(self):
-        return f"Piece(id={self.id})"
+        return f"Piece(id={self.id}, color={self.color})"

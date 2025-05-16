@@ -1,4 +1,5 @@
 import logging
+from annotated_types import IsInfinite
 import pygame
 import abstracts
 import game_elements
@@ -81,7 +82,7 @@ class Game:
 
     def main_loop(self):
         self.is_game_running = True
-        available_cells = []
+        available_cells_to_draw = []
         previous_move_source_cell = None  # the last cell a piece moved from.
         logging.info("entering main loop...")
         while self.is_game_running:
@@ -91,8 +92,8 @@ class Game:
             self._handle_closing_event(events)
             # handling simple clicks
             if clicked_pos := self.get_clicked_pos(events):
-                if available_cells:
-                    available_cells.clear()
+                if available_cells_to_draw:
+                    available_cells_to_draw.clear()
                 elif coordinate := self.board.get_cell_by_coordinates(clicked_pos):
                     if (
                         cell := self.board.get_cell(*coordinate)
@@ -101,21 +102,25 @@ class Game:
                             self.board, color=self.player1.color
                         )
                         for spot in available_spots:
-                            cell = self.board.get_cell(*spot)
+                            spot_coordinate = spot.coordinate
+                            cell = self.board.get_cell(*spot_coordinate)
                             sprite = create_simple_square_sprite(
                                 cell.width,
                                 cell.hight,
                                 settings.AVAILABLE_SPOTS_COLOR,
                                 cell.rect.copy(),
                             )
-                            available_cells.append(sprite)
+                            available_cells_to_draw.append(sprite)
 
             # handling players input
             if player_input := self.current_player.get_input(self.board, events):
                 source_cell: game_elements.Cell = self.board.get_cell(
                     *player_input.source
                 )
-                dest_cell: game_elements.Cell = self.board.get_cell(*player_input.dest)
+                available_spot = player_input.dest
+                dest_cell: game_elements.Cell = self.board.get_cell(
+                    *available_spot.coordinate
+                )
 
                 previous_move_source_cell = create_simple_square_sprite(
                     source_cell.width,
@@ -123,7 +128,18 @@ class Game:
                     settings.LAST_MOVE_CELL_COLOR,
                     source_cell.rect.copy(),
                 )
-                available_cells.clear()
+                available_cells_to_draw.clear()
+
+                if isinstance(
+                    source_cell.piece, game_elements.Pawn
+                ):  # helpful for detecting en-passant
+                    source_cell.piece.moves_count += 1
+
+                # handle en-passant
+                if available_spot.is_en_passant:
+                    target_cell = available_spot.en_passant_target_cell
+                    self.current_player.eaten_pieces.append(target_cell.piece)
+                    target_cell.rem_piece()
 
                 if dest_cell.piece:
                     self.current_player.eaten_pieces.append(source_cell.piece)
@@ -147,7 +163,7 @@ class Game:
                 cell.piece for cell in self.board.get_filled_cells()
             ]
 
-            items_to_draw = [self.board, *available_cells, *pieces]
+            items_to_draw = [self.board, *available_cells_to_draw, *pieces]
             if previous_move_source_cell is not None:
                 items_to_draw.append(previous_move_source_cell)
 
