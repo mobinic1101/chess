@@ -1,21 +1,24 @@
-import abstracts
-import datatypes
 import math
 from typing import SupportsIndex
+from typing import TYPE_CHECKING
+from datatypes import Operation
+
+if TYPE_CHECKING:
+    from renderer import AbstractDrawable
 
 
 class Motion:
     def __init__(self, speed: int):
-        self.operations: list[datatypes.Operation] = []
+        self.operations: list[Operation] = []
         self.speed = speed
 
     def add_operation(
-        self, drawable: abstracts.AbstractDrawable, destination: tuple[int, int]
+        self, drawable: "AbstractDrawable", destination: tuple[int, int]
     ):
         """add a motion operation to the list of operations.
 
         Args:
-            drawable (abstracts.AbstractDrawable): The object to be moved.
+            drawable ("AbstractDrawable"): The object to be moved.
             destination (tuple[int, int]): The destination coordinates to move to.
         """
         # if there is already an operation exists, we just update its destination
@@ -25,17 +28,17 @@ class Motion:
             operation.coordinate = destination
             return
 
-        new_operation = datatypes.Operation(object=drawable, coordinate=destination)
+        new_operation = Operation(object=drawable, coordinate=destination)
         self.operations.append(new_operation)
 
-    def remove_operation(self, drawable: abstracts.AbstractDrawable):
+    def remove_operation(self, drawable: "AbstractDrawable"):
         i = self.find_operation(drawable)
         if i is not None:
             del self.operations[i]
             return 1
         return 0
 
-    def find_operation(self, drawable: abstracts.AbstractDrawable) -> SupportsIndex:
+    def find_operation(self, drawable: "AbstractDrawable") -> SupportsIndex:
         for i in range(len(self.operations)):
             operation = self.operations[i]
             if operation.object.id == drawable.id:

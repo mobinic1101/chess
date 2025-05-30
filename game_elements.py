@@ -1,12 +1,131 @@
-from typing import SupportsIndex
+from typing import SupportsIndex, TYPE_CHECKING
+from abc import abstractmethod
 import logging
 import pygame
-from abstracts import AbstractDrawable, AbstractPiece, AbstractPlayer
+from renderer import AbstractDrawable
 from texture_loader import TexturePack
 from datatypes import AvailableSpot
 import settings
 
-# from helpers import invert_coordinate
+if TYPE_CHECKING:
+    from player import AbstractPlayer
+
+
+class AbstractPiece(AbstractDrawable):
+    def __init__(self, image, player: "AbstractPlayer", coordinate: tuple[int, int]):
+        """
+        Args:
+            player: player who owns the piece
+            color: the color of the piece
+            coordinate (tuple[int, int]): The row and column index of the cell on the board.
+        """
+        super().__init__(image)
+        self.player = player
+        self.color = player.color
+        self.set_coordinate(coordinate)
+        # self.available_spots_cache: dict[list] = {}
+
+    def copy(self):
+        piece_copy = self.__class__(self.image.copy(), self.player, self.coordinate)
+        piece_copy.id = self.id
+        piece_copy.rect = self.rect.copy()
+        piece_copy.available_spots_cache = self.available_spots_cache.copy()
+        return piece_copy
+
+    def is_my_piece(self, color: str):
+        """provide your color, its gonna tell you whether it is your piece or not.
+
+        Args:
+            color (str): your color
+
+        Returns:
+            Boolean: True if it is your piece
+        """
+        return color == self.color
+
+    def set_coordinate(self, coordinate: tuple[int, int]):
+        self.rect.x = coordinate[1] * self.image.get_width()
+        self.rect.y = coordinate[0] * self.image.get_height()
+        self.coordinate = coordinate
+        return self
+
+    # def get_from_cache(
+    #     self, coordinate: tuple[int, int]
+    # ) -> list[tuple[int, int]] | None:
+    #     """
+    #     Get available spots from cache.
+
+    #     Args:
+    #         coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
+
+    #     Returns:
+    #         list[tuple[int, int]] | None: A list of coordinates of available spots or None of not found.
+    #     """
+    #     available_spots = self.available_spots_cache.get(coordinate)
+    #     if available_spots is None:
+    #         return None
+    #     # check if the coordinate is still valid
+    #     if self.coordinate != coordinate:
+    #         # remove the coordinate from the cache
+    #         del self.available_spots_cache[coordinate]
+    #         return None
+    #     return available_spots
+
+    def filter_out_of_bound_spots(self, available_spots: list[AvailableSpot]) -> list[AvailableSpot]:
+        """
+        filters out-of-bound spots from the available spots.
+        """
+        return [
+            spot
+            for spot in available_spots
+            if 0 <= spot.coordinate[0] < 8 and 0 <= spot.coordinate[1] < 8
+        ]
+
+    @abstractmethod
+    def calculate_moves(
+        self, board, color: str, coordinate: tuple[int, int], **kwargs
+    ) -> list[AvailableSpot]:
+        pass
+
+    def find_available_spots(
+        self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
+    ) -> list[AvailableSpot]:
+        """
+        Finds available spots a Piece can move to.
+
+        Args:
+            board (Board): The board to search for available spots.
+            color (str): need to check if the piece is your piece or not (for catching moves).
+            coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
+            if not passed, the piece's current coordinate will be used.
+
+        Returns:
+            list[tuple[int, int]]: A list of coordinates of available spots.
+        """
+        coordinate = coordinate if coordinate else self.coordinate
+
+        # # try hitting cache
+        # if available_spots := self.get_from_cache(coordinate):
+        #     return available_spots
+
+        available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
+        available_spots = self.filter_out_of_bound_spots(available_spots)
+        # # cache the result
+        # self.available_spots_cache[coordinate] = available_spots
+        return available_spots
+
+    def __str__(self):
+        return f"Piece(id={self.id}, color={self.color})"
+
+
+class SpecialPiece(AbstractPiece):
+    def __init__(self, image, player: "AbstractPlayer", coordinate: tuple[int, int]):
+        super().__init__(image, player, coordinate)
+        self.moves_count = 0
+
+    @property
+    def has_moved(self):
+        return self.moves_count > 0
 
 
 class Cell(AbstractDrawable):
@@ -14,7 +133,7 @@ class Cell(AbstractDrawable):
         self,
         image: pygame.Surface,
         coordinate: tuple[int, int],
-        piece: AbstractPiece | None = None,
+        piece: AbstractPiece | SpecialPiece | None = None,
     ):
         """
         Initializes a Cell object with a given image, coordinate, and optional piece.
@@ -53,7 +172,7 @@ class Cell(AbstractDrawable):
             self.piece.rect.x = self.rect.x
             self.piece.rect.y = self.rect.y
 
-    def set_piece(self, piece: AbstractPiece):
+    def set_piece(self, piece: AbstractPiece | SpecialPiece):
         """set the piece of the cell and set the piece's coordinate to the cell's coordinate
         Args:
             piece (AbstractPiece): The piece to be placed on the cell.
@@ -158,12 +277,12 @@ class Board(AbstractDrawable):
         cell = self.board[i][j]
         return cell
 
-    def get_cell_by_coordinates(self, coordinates: tuple) -> tuple[int, int] | None:
+    def get_cell_by_coordinates(self, coordinates: tuple) -> Cell | None:
         """return index of a cell in self.board using provided coordinates
         so that cell can be accessed like board[r][c] -> Cell
 
         Returns:
-            tuple[int, int]
+            Cell
         """
         for i in range(self.CELL_COUNT):
             for j in range(self.CELL_COUNT):
@@ -171,7 +290,7 @@ class Board(AbstractDrawable):
                 if (cell.rect.x + cell.width >= coordinates[0] >= cell.rect.x) and (
                     cell.rect.y + cell.hight >= coordinates[1] >= cell.rect.y
                 ):
-                    return i, j
+                    return self.get_cell(i, j)
         return None
 
     def get_filled_cells(self) -> list[Cell]:
@@ -193,20 +312,12 @@ class Board(AbstractDrawable):
         return iter(self.board)
 
 
-class Pawn(AbstractPiece):
-    def __init__(self, image, player, coordinate):
-        super().__init__(image, player, coordinate)
-        self.moves_count = 0
-
-    @property
-    def can_captured_by_en_passant(self):
-        return self.moves_count == 1
-
+class Pawn(SpecialPiece):
     def calculate_moves(
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         """
@@ -278,17 +389,17 @@ class Pawn(AbstractPiece):
                         piece_j + horizontal_direction,
                     )
                     dest_cell = board.get_cell(*dest_coordinate)
-                    print(f"side_cell.piece: {side_cell.piece}")
-                    if not dest_cell.is_empty():
-                        continue
                     if side_cell.is_empty():
+                        continue
+                    if not dest_cell.is_empty():
                         continue
                     if not isinstance(side_cell.piece, Pawn):
                         continue
+                    print(f"side_cell.piece: {side_cell.piece}")
                     print(
-                        f"can piece can_captured_by_en_passant?: {side_cell.piece.can_captured_by_en_passant}"
+                        f"can piece has_done_1_move?: {side_cell.piece.moves_count == 1}"
                     )
-                    if not side_cell.piece.can_captured_by_en_passant:
+                    if not side_cell.piece.moves_count == 1:
                         continue
                     if side_cell.piece.color == color:
                         continue
@@ -296,19 +407,19 @@ class Pawn(AbstractPiece):
                         AvailableSpot(
                             dest_coordinate,
                             is_en_passant=True,
-                            en_passant_target_cell=side_cell,
+                            target_cell=side_cell,
                         )
                     )
 
         return available_spots
 
 
-class Rook(AbstractPiece):
+class Rook(SpecialPiece):
     def calculate_moves(
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -321,6 +432,15 @@ class Rook(AbstractPiece):
             if cell.piece is not None:
                 if cell.piece.color != color:
                     available_spots.append(AvailableSpot((piece_i, j)))
+                    break
+                # handle castling move
+                elif not isinstance(cell.piece, King):
+                    break
+                elif cell.piece.has_moved or self.has_moved:
+                    break
+                spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
+                spot.castling_set_details(rook_new_pos=(piece_i, j - 2), king_new_pos=(piece_i, j + 1))
+                available_spots.append(spot)
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
 
@@ -330,6 +450,17 @@ class Rook(AbstractPiece):
             if cell.piece is not None:
                 if cell.piece.color != color:
                     available_spots.append(AvailableSpot((piece_i, j)))
+                    break
+                # handle castling move
+                elif not isinstance(cell.piece, King):
+                    break
+                elif cell.piece.has_moved or self.has_moved:
+                    break
+                spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
+                spot.set_castling_details(
+                    rook_new_pos=(piece_i, j + 2), king_new_pos=(piece_i, j - 1)
+                )
+                available_spots.append(spot)
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
 
@@ -359,7 +490,7 @@ class Knight(AbstractPiece):
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -405,7 +536,7 @@ class Bishop(AbstractPiece):
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -446,7 +577,7 @@ class Queen(AbstractPiece):
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -515,12 +646,12 @@ class Queen(AbstractPiece):
         return available_spots
 
 
-class King(AbstractPiece):
+class King(SpecialPiece):
     def calculate_moves(
         self,
         board: Board,
         color: str,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int],
         **kwargs,
     ):
         piece_i = coordinate[0]
@@ -562,7 +693,7 @@ string_to_piece_class = {
 
 
 def get_board(
-    texture_pack: TexturePack, player1: AbstractPlayer, player2: AbstractPlayer
+    texture_pack: TexturePack, player1: "AbstractPlayer", player2: "AbstractPlayer"
 ) -> Board:
     """
     Create a board with pieces for two players.
@@ -656,10 +787,8 @@ if __name__ == "__main__":
                     available_cells_to_draw.clear()
                     break
                 mouse_pos = pygame.mouse.get_pos()
-                rowcol = board.get_cell_by_coordinates(mouse_pos)
-                if rowcol:
-                    i, j = rowcol
-                    cell = board[i][j]
+                cell = board.get_cell_by_coordinates(mouse_pos)
+                if cell:
                     if cell.piece:
                         print(cell.piece)
                         available_spots = cell.piece.find_available_spots(

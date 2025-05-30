@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING
-import abstracts
-
 if TYPE_CHECKING:
     import game_elements
+    from renderer import AbstractDrawable
 
 
 class Operation:
-    def __init__(self, object: abstracts.AbstractDrawable, coordinate: tuple) -> None:
+    def __init__(self, object: "AbstractDrawable", coordinate: tuple) -> None:
         self.object = object
         self.coordinate = coordinate
 
@@ -22,30 +21,54 @@ class AvailableSpot:
         self,
         coordinate: tuple[int, int],
         is_en_passant=False,
-        en_passant_target_cell: "game_elements.Cell" = None,
         is_castling=False,
         is_promotion=False,
+        target_cell: "game_elements.Cell" = None,
     ):
+        """
+        Args:
+            coordinate (tuple[int, int]): coordinate for the available spot on the board
+            is_en_passant (bool, optional): if moving to this spot is en-passant. Defaults to False.
+            target_cell (game_elements.Cell, optional): the piece that the special move is gonna be made on. Defaults to None.
+            is_castling (bool, optional): if moving to this spot is castling. Defaults to False.
+            is_promotion (bool, optional): if moving to this spot is promotion. Defaults to False.
+
+        Raises:
+            ValueError: You must pass the target_cell parameter if you pass is_en_passant or is_castling as True
+        """
         self.coordinate = coordinate
         self.is_en_passant = is_en_passant
-        self.en_passant_target_cell = en_passant_target_cell
-        if self.is_en_passant:
-            if self.en_passant_target_cell is None:
-                raise ValueError(
-                    "if you pass is_en_passant parameter as True you must pass the en_passant_target_cell too"
-                )
         self.is_castling = is_castling
         self.is_promotion = is_promotion
+        self.target_cell = target_cell
+        self.castling_details: dict[str, tuple[int, int]] = {}
+        if self.is_en_passant or self.is_castling:
+            if self.target_cell is None:
+                raise ValueError(
+                    "You must pass the target_cell parameter if you pass is_en_passant or is_castling as True"
+                )
+
+    def castling_set_details(
+        self,
+        rook_new_pos: tuple[int, int],
+        king_new_pos: tuple[int, int],
+    ):
+        """sets the details for castling move"""
+        details = {
+            "rook_new_pos": rook_new_pos,
+            "king_new_pos": king_new_pos,
+        }
+        self.is_castling = True
+        self.castling_details = details
 
 
 class Move:
     """represents a single move a player does;
     example: Move(source=(2, 4), dest=(2, 5))
     """
-
-    source: tuple[int, int]
-    dest: tuple[int, int]
-
     def __init__(self, source: tuple[int, int], dest: AvailableSpot):
         self.source = source
         self.dest: AvailableSpot = dest
+        
+    def __str__(self):
+        return f"Move(source={self.source}, dest={self.dest.coordinate})"

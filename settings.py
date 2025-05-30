@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from abstracts import AbstractPlayer
+    from player import AbstractPlayer
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
