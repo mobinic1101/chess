@@ -54,9 +54,9 @@ class Game:
 
             # drawing stuff
             drawables: list["AbstractDrawable"] = [self.game_logic.board]
-            drawables.extend(self.game_logic.available_cells_to_draw)
             if self.game_logic.previous_move_source_cell:
                 drawables.append(self.game_logic.previous_move_source_cell)
+            drawables.extend(self.game_logic.available_cells_to_draw)
             drawables.extend(
                 [cell.piece for cell in self.game_logic.board.get_filled_cells()]
             )
