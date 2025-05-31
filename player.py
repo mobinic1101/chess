@@ -75,14 +75,14 @@ class AbstractPlayer(ABC):
         # the dest cell is empty or the dest cell has a piece that is not his
         # otherwise return None meaning invalid move
         source_cell, dest_cell = player_input.get_cells(board)
-        invalid_conditions = [
-            not source_cell.piece.is_my_piece(self.color),
-            dest_cell.piece and dest_cell.piece.is_my_piece(self.color),
-            (dest_cell.piece and not dest_cell.piece.is_my_piece(self.color))
-            and isinstance(dest_cell.piece, game_elements.King),
-        ]
-        if any(invalid_conditions):
+        
+        if not source_cell.piece.is_my_piece(self.color):
             return False
+        if dest_cell.piece and dest_cell.piece.is_my_piece(self.color): # for castling move
+            if isinstance(dest_cell.piece, game_elements.King):
+                return True
+            return False
+
         return True
 
     def get_input(
