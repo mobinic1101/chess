@@ -145,7 +145,7 @@ class GameLogic:
         player_input: "PlayerInput" = self.current_player.get_input(self.board, events)
         if player_input is None:
             return False
-        source_cell, _ = player_input.get_cells(self.board)
+        source_cell, dest_cell = player_input.get_cells(self.board)
 
         self.add_previous_move_source_cell(source_cell)
 
@@ -154,6 +154,8 @@ class GameLogic:
         if isinstance(source_cell.piece, SpecialPiece):
             if source_cell.piece.moves_count == 0:
                 source_cell.piece.moves_count += 1
+            if dest_cell.piece:
+                dest_cell.piece.moves_count += 1
             special_move_made = self.handle_special_moves(player_input)
 
         if not special_move_made:
