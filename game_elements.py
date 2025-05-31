@@ -439,7 +439,7 @@ class Rook(SpecialPiece):
                 elif cell.piece.has_moved or self.has_moved:
                     break
                 spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
-                spot.castling_set_details(rook_new_pos=(piece_i, j - 2), king_new_pos=(piece_i, j + 1))
+                spot.set_castling_details(rook_new_pos=(piece_i, j - 1), king_new_pos=(piece_i, j - 2))
                 available_spots.append(spot)
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
@@ -458,7 +458,7 @@ class Rook(SpecialPiece):
                     break
                 spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
                 spot.set_castling_details(
-                    rook_new_pos=(piece_i, j + 2), king_new_pos=(piece_i, j - 1)
+                    rook_new_pos=(piece_i, j + 1), king_new_pos=(piece_i, j + 2)
                 )
                 available_spots.append(spot)
                 break
