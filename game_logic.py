@@ -154,7 +154,7 @@ class GameLogic:
         if isinstance(source_cell.piece, SpecialPiece):
             if source_cell.piece.moves_count == 0:
                 source_cell.piece.moves_count += 1
-            if dest_cell.piece:
+            if dest_cell.piece and isinstance(dest_cell.piece, SpecialPiece):
                 dest_cell.piece.moves_count += 1
             special_move_made = self.handle_special_moves(player_input)
 
