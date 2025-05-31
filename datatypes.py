@@ -48,7 +48,7 @@ class AvailableSpot:
                     "You must pass the target_cell parameter if you pass is_en_passant or is_castling as True"
                 )
 
-    def castling_set_details(
+    def set_castling_details(
         self,
         rook_new_pos: tuple[int, int],
         king_new_pos: tuple[int, int],
