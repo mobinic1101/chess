@@ -6,15 +6,27 @@ import pygame.sprite
 
 
 class AbstractDrawable(pygame.sprite.Sprite, ABC):
+    """Abstract class for every game objects that is gonna be drawn on a surface.
+    """
     def __init__(self, image: pygame.Surface):
         self.id = random.random()
         self.image = image
         self.rect = self.image.get_rect()
 
-    def move_x(self, value):
+    def move_x(self, value: int):
+        """adds the value to the objects.rect.x value.
+
+        Args:
+            value (int): _description_
+        """
         self.rect.x += value
 
-    def move_y(self, value):
+    def move_y(self, value: int):
+        """add the value ro the objects.rect.y value.
+
+        Args:
+            value (int): _description_
+        """
         self.rect.y += value
 
     def __eq__(self, other):
@@ -30,7 +42,7 @@ class Renderer:
         """Adds an item to the renderer's list of items."""
         if item not in self.items:
             self.items.append(item)
-    
+
     def bulk_add_items(self, items: list[AbstractDrawable]):
         """Adds multiple items to the renderer's list of items."""
         self.items.extend(items)
@@ -39,7 +51,7 @@ class Renderer:
         """Clears the list of items."""
         self.items.clear()
 
-    def draw_items(self, surface: pygame.Surface | None=None, update_display=False):
+    def draw_items(self, surface: pygame.Surface | None = None, update_display=False):
         """Iterates through items and draws them on the passed surface, clear the list of items at the end.
         The order of passing items affects the layering of drawing.
 
