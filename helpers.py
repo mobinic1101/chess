@@ -4,6 +4,7 @@ import pygame
 
 if TYPE_CHECKING:
     from game_elements import Board
+    from types import FunctionType
 
 
 class SimpleSprite(pygame.sprite.Sprite):
@@ -68,13 +69,30 @@ def create_simple_square_sprite(width: int, height: int, color: str, rect: pygam
         height (int): height if the square
         color (str): color of it
         rect (Rect): where you want the rect to get drew? pass a rect object here representing it
-    """    
+    """
     surface = pygame.surface.Surface((width, height))
     surface.fill(color)
     sprite = SimpleSprite(surface)
     sprite.rect = rect
     return sprite
 
+
+def short_circuit_iterable(functions: list[FunctionType], *args, **kwargs) -> bool:
+    """
+    for func in functions:
+        if not func(*args, **kwargs):
+            return False
+    return True\n
+    Args:
+        functions (list[FunctionType]): a list of functions
+        *args, **kwargs: parameters that are gonna be passed to those functions when running them
+    Returns:
+        bool: True of all of those functions returns True False otherwise
+    """
+    for func in functions:
+        if not func(*args, **kwargs):
+            return False
+    return True
 
 
 if __name__ == "__main__":

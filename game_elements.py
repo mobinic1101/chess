@@ -1,10 +1,11 @@
-from typing import SupportsIndex, TYPE_CHECKING
+from typing import SupportsIndex, TYPE_CHECKING, FunctionType
 from abc import abstractmethod
 import logging
 import pygame
 from renderer import AbstractDrawable
 from texture_loader import TexturePack
 from datatypes import AvailableSpot
+from helpers import short_circuit_iterable
 import settings
 
 if TYPE_CHECKING:
@@ -23,13 +24,25 @@ class AbstractPiece(AbstractDrawable):
         self.player = player
         self.color = player.color
         self.set_coordinate(coordinate)
+        self.in_scope_of = []  # pieces that have this piece within their range of influence.
         # self.available_spots_cache: dict[list] = {}
+
+    # @staticmethod
+    # def update_scopes(board: "Board"):
+    #     """This method is used to update the in_scope_of attribute of all pieces in the board.
+    #     It should be called whenever the piece's position changes or when the board state changes.
+    #     """
+    #     for cell in board.get_filled_cells():
+    #         piece = cell.piece
+    #         piece.is_scope_of.clear()  # clear the previous scope
+    #         for spot in piece.find_available_spots(board, )
+            
 
     def copy(self):
         piece_copy = self.__class__(self.image.copy(), self.player, self.coordinate)
         piece_copy.id = self.id
         piece_copy.rect = self.rect.copy()
-        piece_copy.available_spots_cache = self.available_spots_cache.copy()
+        # piece_copy.available_spots_cache = self.available_spots_cache.copy()
         return piece_copy
 
     def is_my_piece(self, color: str):
@@ -71,7 +84,9 @@ class AbstractPiece(AbstractDrawable):
     #         return None
     #     return available_spots
 
-    def filter_out_of_bound_spots(self, available_spots: list[AvailableSpot]) -> list[AvailableSpot]:
+    def filter_out_of_bound_spots(
+        self, available_spots: list[AvailableSpot]
+    ) -> list[AvailableSpot]:
         """
         filters out-of-bound spots from the available spots.
         """
@@ -88,21 +103,53 @@ class AbstractPiece(AbstractDrawable):
         pass
 
     def find_available_spots(
-        self, board, color: str, coordinate: tuple[int, int] | None = None, **kwargs
+        self,
+        board,
+        color: str,
+        filter_pieces: int,
+        coordinate: tuple[int, int] | None = None,
+        **kwargs
     ) -> list[AvailableSpot]:
         """
         Finds available spots a Piece can move to.
 
         Args:
             board (Board): The board to search for available spots.
-            color (str): need to check if the piece is your piece or not (for catching moves).
+            color (str): need to check if the piece is your piece or not (for catching moves)
+            if not passed all pieces within the range of this piece will be included
+            in return list.
+            filter_pieces (int): to specify which pieces should be included in the
+            available spots,
+            pass **0** to include all pieces,  
+            pass **1** to include only pieces that have the same color as the current piece,  
+            pass **2** to include only pieces that have the opposite color of the current piece,  
+            pass **3** no pieces, only empty cells.  
             coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
             if not passed, the piece's current coordinate will be used.
 
         Returns:
             list[tuple[int, int]]: A list of coordinates of available spots.
         """
-        coordinate = coordinate if coordinate else self.coordinate
+        coordinate = coordinate or self.coordinate
+        if 0 > filter_pieces > 3:
+            raise AttributeError("only numbers between 0-3 are allowed")
+
+        def filter_same_color(available_spot: AvailableSpot, board: Board):
+            cell = board.get_cell(*available_spot.coordinate)
+            return cell.is_empty() or cell.piece.color == color
+
+        def filter_opposite_color(available_spot: AvailableSpot, board: Board):
+            cell = board.get_cell(*available_spot.coordinate)
+            return cell.is_empty() or cell.piece.color != self.color:
+
+        if filter_pieces == 0: # all
+            filter_key = (lambda available_spot, board: True)
+        elif filter_pieces == 1: # same color
+            filter_key = filter_same_color
+        elif filter_pieces == 2: # opposite color
+            filter_key = filter_opposite_color
+        elif filter_pieces == 3: # no pieces, cells only.
+            filter_key = (lambda available_spot, board: board.get_cell(*available_spot.coordinate).is_empty())
 
         # # try hitting cache
         # if available_spots := self.get_from_cache(coordinate):
@@ -110,6 +157,7 @@ class AbstractPiece(AbstractDrawable):
 
         available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
         available_spots = self.filter_out_of_bound_spots(available_spots)
+        available_spots = list(filter(filter_key, available_spots))
         # # cache the result
         # self.available_spots_cache[coordinate] = available_spots
         return available_spots
@@ -293,15 +341,23 @@ class Board(AbstractDrawable):
                     return self.get_cell(i, j)
         return None
 
-    def get_filled_cells(self) -> list[Cell]:
+    def get_filled_cells(self, player: AbstractPlayer | None = None) -> list[Cell]:
         """get cells that have a piece attached to them
+        Args:
+            player(AbstractPlayer): only return cells that their pieces belong to this player
+            if not passed return all filled cells
+
         Returns:
             list[Cell]
         """
+        valid_conditions = [lambda cell: not cell.is_empty()]
+        if player:
+            valid_conditions.append(lambda cell: cell.piece.color == player.color)
+
         cells = []
         for row in self.board:
             for cell in row:
-                if not cell.is_empty():
+                if short_circuit_iterable(valid_conditions, cell):
                     cells.append(cell)
         return cells
 
@@ -369,7 +425,7 @@ class Pawn(SpecialPiece):
                 cell = board.get_cell(
                     piece_i + vertical_direction, piece_j + horizontal_direction
                 )
-                if cell.piece is not None and cell.piece.color != color:
+                if cell.piece is not None:
                     available_spots.append(
                         AvailableSpot(
                             (
@@ -401,8 +457,6 @@ class Pawn(SpecialPiece):
                     )
                     if not side_cell.piece.moves_count == 1:
                         continue
-                    if side_cell.piece.color == color:
-                        continue
                     available_spots.append(
                         AvailableSpot(
                             dest_coordinate,
@@ -430,16 +484,17 @@ class Rook(SpecialPiece):
             # print(f"going right: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
-                if cell.piece.color != color:
+                if not isinstance(cell.piece, King):
                     available_spots.append(AvailableSpot((piece_i, j)))
                     break
                 # handle castling move
-                elif not isinstance(cell.piece, King):
-                    break
                 elif cell.piece.has_moved or self.has_moved:
+                    available_spots.append(AvailableSpot((piece_i, j)))
                     break
                 spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
-                spot.set_castling_details(rook_new_pos=(piece_i, j - 1), king_new_pos=(piece_i, j - 2))
+                spot.set_castling_details(
+                    rook_new_pos=(piece_i, j - 1), king_new_pos=(piece_i, j - 2)
+                )
                 available_spots.append(spot)
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
@@ -448,13 +503,12 @@ class Rook(SpecialPiece):
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
-                if cell.piece.color != color:
+                if not isinstance(cell.piece, King):
                     available_spots.append(AvailableSpot((piece_i, j)))
                     break
                 # handle castling move
-                elif not isinstance(cell.piece, King):
-                    break
                 elif cell.piece.has_moved or self.has_moved:
+                    available_spots.append(AvailableSpot((piece_i, j)))
                     break
                 spot = AvailableSpot((piece_i, j), is_castling=True, target_cell=cell)
                 spot.set_castling_details(
@@ -468,8 +522,7 @@ class Rook(SpecialPiece):
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((i, piece_j)))
+                available_spots.append(AvailableSpot((i, piece_j)))
                 break
             available_spots.append(AvailableSpot((i, piece_j)))
 
@@ -477,8 +530,7 @@ class Rook(SpecialPiece):
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((i, piece_j)))
+                available_spots.append(AvailableSpot((i, piece_j)))
                 break
             available_spots.append(AvailableSpot((i, piece_j)))
 
@@ -506,12 +558,8 @@ class Knight(AbstractPiece):
                     or (piece_j - j < 0 or piece_j - j >= board.CELL_COUNT)
                 ):
                     continue
-                cell = board.get_cell(piece_i + i, piece_j + j)
-                cell2 = board.get_cell(piece_i + i, piece_j - j)
-                if (cell.piece is None) or cell.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
-                if (cell2.piece is None) or cell2.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i + i, piece_j - j)))
+                available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
+                available_spots.append(AvailableSpot((piece_i + i, piece_j - j)))
         for i in [-1, 1]:
             for j in [-2, 2]:
                 # prevent IndexOutOfRange
@@ -521,12 +569,8 @@ class Knight(AbstractPiece):
                     or (piece_i - i < 0 or piece_i - i >= board.CELL_COUNT)
                 ):
                     continue
-                cell = board.get_cell(piece_i + i, piece_j + j)
-                cell2 = board.get_cell(piece_i - i, piece_j + j)
-                if (cell.piece is None) or cell.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
-                if (cell2.piece is None) or cell2.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i - i, piece_j + j)))
+                available_spots.append(AvailableSpot((piece_i + i, piece_j + j)))
+                available_spots.append(AvailableSpot((piece_i - i, piece_j + j)))
 
         return available_spots
 
@@ -563,8 +607,7 @@ class Bishop(AbstractPiece):
                     continue
                 cell = board.get_cell(*direction)
                 if cell.piece is not None:
-                    if cell.piece.color != color:
-                        available_spots.append(AvailableSpot(direction))
+                    available_spots.append(AvailableSpot(direction))
                     completed_directions.add(i)
                     continue
                 available_spots.append(AvailableSpot(direction))
@@ -588,8 +631,7 @@ class Queen(AbstractPiece):
             # print(f"going right: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i, j)))
+                available_spots.append(AvailableSpot((piece_i, j)))
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
 
@@ -597,8 +639,7 @@ class Queen(AbstractPiece):
             # print(f"going left: {piece_i, j}")
             cell = board.get_cell(piece_i, j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((piece_i, j)))
+                available_spots.append(AvailableSpot((piece_i, j)))
                 break
             available_spots.append(AvailableSpot((piece_i, j)))
 
@@ -606,8 +647,7 @@ class Queen(AbstractPiece):
             # print(f"going downwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((i, piece_j)))
+                available_spots.append(AvailableSpot((i, piece_j)))
                 break
             available_spots.append(AvailableSpot((i, piece_j)))
 
@@ -615,8 +655,7 @@ class Queen(AbstractPiece):
             # print(f"going upwards: {i, piece_j}")
             cell = board.get_cell(i, piece_j)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot((i, piece_j)))
+                available_spots.append(AvailableSpot((i, piece_j)))
                 break
             available_spots.append(AvailableSpot((i, piece_j)))
 
@@ -638,8 +677,7 @@ class Queen(AbstractPiece):
                     continue
                 cell = board.get_cell(*direction)
                 if cell.piece is not None:
-                    if cell.piece.color != color:
-                        available_spots.append(AvailableSpot(direction))
+                    available_spots.append(AvailableSpot(direction))
                     completed_directions.add(i)
                     continue
                 available_spots.append(AvailableSpot(direction))
@@ -674,8 +712,7 @@ class King(SpecialPiece):
                 continue
             cell = board.get_cell(*direction)
             if cell.piece is not None:
-                if cell.piece.color != color:
-                    available_spots.append(AvailableSpot(direction))
+                available_spots.append(AvailableSpot(direction))
                 continue
             available_spots.append(AvailableSpot(direction))
 
