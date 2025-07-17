@@ -140,7 +140,7 @@ class AbstractPiece(AbstractDrawable):
 
         def filter_opposite_color(available_spot: AvailableSpot, board: Board):
             cell = board.get_cell(*available_spot.coordinate)
-            return cell.is_empty() or cell.piece.color != self.color:
+            return cell.is_empty() or cell.piece.color != self.color
 
         if filter_pieces == 0: # all
             filter_key = (lambda available_spot, board: True)
