@@ -61,7 +61,7 @@ class GameLogic:
         if cell.is_empty():
             return
         for spot in cell.piece.find_available_spots(
-            self.board, color=self.player1.color
+            self.board, color=self.player1.color, filter_pieces=2
         ):
             cell = self.board.get_cell(*spot.coordinate)
             sprite = helpers.create_simple_square_sprite(
@@ -82,11 +82,11 @@ class GameLogic:
         self.motion.add_operation(dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y))
         
         # handle pieces that are now in the scope of the moved piece
-        for spot in dest_cell.piece.find_available_spots(
-            self.board, color=self.current_player.color
-        ):
-            cell = self.board.get_cell(*spot.coordinate)
-            if not cell.is_empty():
+        # for spot in dest_cell.piece.find_available_spots(
+        #     self.board, color=self.current_player.color
+        # ):
+        #     cell = self.board.get_cell(*spot.coordinate)
+            # if not cell.is_empty():
                 
 
     def handle_en_passant(

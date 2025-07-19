@@ -71,10 +71,10 @@ class Human(AbstractInputSource):
         if len(self.inputs) == 2:
             inputs = self.inputs.copy()
             self.inputs.clear()
-            # validate destination pos
+            # make sure the destination is a valid spot
             dest_spot = None
             source_cell = board.get_cell(*inputs[0])
-            for spot in source_cell.piece.find_available_spots(board, color=color):
+            for spot in source_cell.piece.find_available_spots(board, color=color, filter_pieces=2):
                 coordinate = spot.coordinate
                 if inputs[1] == coordinate:
                     dest_spot = spot
@@ -112,7 +112,7 @@ class Bot(AbstractInputSource):
         while 1:
             source = random.choice(cells)
             available_spots = source.piece.find_available_spots(
-                board, color=color, opponent=True
+                board, color=color, opponent=True, filter_pieces=2
             )
             if available_spots:
                 possible_destinations = available_spots
