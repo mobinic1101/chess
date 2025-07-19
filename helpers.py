@@ -77,7 +77,7 @@ def create_simple_square_sprite(width: int, height: int, color: str, rect: pygam
     return sprite
 
 
-def short_circuit_iterable(functions: list[FunctionType], *args, **kwargs) -> bool:
+def short_circuit_iterable(functions: list["FunctionType"], *args, **kwargs) -> bool:
     """
     for func in functions:
         if not func(*args, **kwargs):

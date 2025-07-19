@@ -80,6 +80,14 @@ class GameLogic:
         dest_cell.set_piece(source_cell.piece)
         source_cell.rem_piece()
         self.motion.add_operation(dest_cell.piece, (dest_cell.rect.x, dest_cell.rect.y))
+        
+        # handle pieces that are now in the scope of the moved piece
+        for spot in dest_cell.piece.find_available_spots(
+            self.board, color=self.current_player.color
+        ):
+            cell = self.board.get_cell(*spot.coordinate)
+            if not cell.is_empty():
+                
 
     def handle_en_passant(
         self, player_input: "PlayerInput", source_cell: Cell, dest_cell: Cell

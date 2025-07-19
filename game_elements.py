@@ -1,4 +1,4 @@
-from typing import SupportsIndex, TYPE_CHECKING, FunctionType
+from typing import SupportsIndex, TYPE_CHECKING
 from abc import abstractmethod
 import logging
 import pygame
@@ -24,7 +24,9 @@ class AbstractPiece(AbstractDrawable):
         self.player = player
         self.color = player.color
         self.set_coordinate(coordinate)
-        self.in_scope_of = []  # pieces that have this piece within their range of influence.
+        self.in_scope_of = (
+            []
+        )  # pieces that have this piece within their range of influence.
         # self.available_spots_cache: dict[list] = {}
 
     # @staticmethod
@@ -36,7 +38,6 @@ class AbstractPiece(AbstractDrawable):
     #         piece = cell.piece
     #         piece.is_scope_of.clear()  # clear the previous scope
     #         for spot in piece.find_available_spots(board, )
-            
 
     def copy(self):
         piece_copy = self.__class__(self.image.copy(), self.player, self.coordinate)
@@ -108,7 +109,7 @@ class AbstractPiece(AbstractDrawable):
         color: str,
         filter_pieces: int,
         coordinate: tuple[int, int] | None = None,
-        **kwargs
+        **kwargs,
     ) -> list[AvailableSpot]:
         """
         Finds available spots a Piece can move to.
@@ -120,10 +121,10 @@ class AbstractPiece(AbstractDrawable):
             in return list.
             filter_pieces (int): to specify which pieces should be included in the
             available spots,
-            pass **0** to include all pieces,  
-            pass **1** to include only pieces that have the same color as the current piece,  
-            pass **2** to include only pieces that have the opposite color of the current piece,  
-            pass **3** no pieces, only empty cells.  
+            pass **0** to include all pieces,
+            pass **1** to include only pieces that have the same color as the current piece,
+            pass **2** to include only pieces that have the opposite color of the current piece,
+            pass **3** no pieces, only empty cells.
             coordinate (tuple[int, int]): The coordinates of the piece to find available spots for.
             if not passed, the piece's current coordinate will be used.
 
@@ -142,14 +143,16 @@ class AbstractPiece(AbstractDrawable):
             cell = board.get_cell(*available_spot.coordinate)
             return cell.is_empty() or cell.piece.color != self.color
 
-        if filter_pieces == 0: # all
-            filter_key = (lambda available_spot, board: True)
-        elif filter_pieces == 1: # same color
+        if filter_pieces == 0:  # all
+            filter_key = lambda available_spot, board: True
+        elif filter_pieces == 1:  # same color
             filter_key = filter_same_color
-        elif filter_pieces == 2: # opposite color
+        elif filter_pieces == 2:  # opposite color
             filter_key = filter_opposite_color
-        elif filter_pieces == 3: # no pieces, cells only.
-            filter_key = (lambda available_spot, board: board.get_cell(*available_spot.coordinate).is_empty())
+        elif filter_pieces == 3:  # no pieces, cells only.
+            filter_key = lambda available_spot, board: board.get_cell(
+                *available_spot.coordinate
+            ).is_empty()
 
         # # try hitting cache
         # if available_spots := self.get_from_cache(coordinate):
@@ -157,7 +160,7 @@ class AbstractPiece(AbstractDrawable):
 
         available_spots = self.calculate_moves(board, color, coordinate, **kwargs)
         available_spots = self.filter_out_of_bound_spots(available_spots)
-        available_spots = list(filter(filter_key, available_spots))
+        available_spots = [spot for spot in available_spots if filter_key(spot, board)]
         # # cache the result
         # self.available_spots_cache[coordinate] = available_spots
         return available_spots
@@ -341,7 +344,7 @@ class Board(AbstractDrawable):
                     return self.get_cell(i, j)
         return None
 
-    def get_filled_cells(self, player: AbstractPlayer | None = None) -> list[Cell]:
+    def get_filled_cells(self, player: "AbstractPlayer | None" = None) -> list[Cell]:
         """get cells that have a piece attached to them
         Args:
             player(AbstractPlayer): only return cells that their pieces belong to this player
@@ -794,24 +797,7 @@ if __name__ == "__main__":
         color="black",
         input_source=Human(),
     )
-    board = Board(image)
-    board[3][1].set_piece(
-        Pawn(
-            pack.get_texture(
-                settings.TEXTURE_NAMES["b_pawn"], size=settings.PIECE_WIDTH_HIGHT
-            ),
-            player2,
-            (3, 1),
-        )
-    )
-    pawn = Pawn(
-        pack.get_texture(
-            settings.TEXTURE_NAMES["w_pawn"], size=settings.PIECE_WIDTH_HIGHT
-        ),
-        player1,
-        (3, 0),
-    )
-    board[3][0].set_piece(pawn)
+    board = get_board(pack, player1, player2)
     RUN = True
     available_cells_to_draw = []
     while RUN:
@@ -829,7 +815,7 @@ if __name__ == "__main__":
                     if cell.piece:
                         print(cell.piece)
                         available_spots = cell.piece.find_available_spots(
-                            board, color=cell.piece.color
+                            board, color=cell.piece.color, filter_pieces=0
                         )
                         print(f"Available spots for {cell.piece}: {available_spots}")
                         for spot in available_spots:
